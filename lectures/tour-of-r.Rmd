@@ -1,0 +1,316 @@
+---
+title: "Tour of R"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+############## Packages 
+# install.packages(c("learnr", "tidyverse", "remotes"))
+# remotes::install_github("rstudio/gradethis")
+
+
+### A note on using R Studio 
+# You can highlight some code and hit 
+# cmd + enter to run it
+# NOTE this file as a whole will not run
+
+# This is a single line comment
+x <- 5 # Comments can also go after code
+
+'This is a multi-line comment
+It can span several lines
+But its less commonly used than # comments'
+
+# Numeric Type
+a <- 1
+# This shows you the type 
+class(a)
+
+# Integer Type
+b <- 1L
+class(b)
+
+# Strings 
+fruit <- "Apple"
+fruit
+# You can use either single or double quotes to declare a string
+colour <- 'red'
+colour
+
+# Logical Types
+# Create an object called x which takes the value TRUE
+x <- TRUE
+# print the contents of the object x
+class(x)
+y <- FALSE
+y
+
+############## Expressions and evaluations
+x == y
+x != y
+
+b = 3
+a > b
+a >= b
+a <= b
+
+comparison <- x!=y
+"red" == "Red"
+
+is.logical(a)
+is.numeric(a)
+is.na(a)
+
+############## Type Casting
+
+# 0 casts to false
+as.logical(0)
+# everything else casts to true
+as.logical(21)
+# strings will not cast to logical
+as.logical("oiashdkjhas")
+
+as.numeric(TRUE)
+as.numeric(FALSE)
+as.numeric("4.5")
+# Rounds DOWN
+as.integer("4.5")
+
+as.character(TRUE)
+## [1] "TRUE"
+as.character(FALSE)
+## [1] "FALSE"
+## Numeric to character
+
+as.character(TRUE)
+as.character(10)
+as.character(-2.263)
+
+############## Vector Types
+# c() function for creating a vector
+fruits <- c("Apple", "Orange", "Pear", "Grapes")
+height <- c(1.68, 1.83, 1.57, 1.87, 1.7, 1.57, 1.73, 1.85, 1.6, 1.58)
+smokes <- c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE)
+
+# first 6 values of a vector
+head(height)
+# first n values
+head(height, n = 4)
+# last n values
+tail(height, n=4)
+# conditional filter
+height[height>1.7]
+# logical filtering
+smokes[smokes]
+smokes[!smokes]
+
+# Coercion 
+as.character(height)
+as.logical(height)
+as.numeric(smokes)
+
+# Attempts to coerce multiple types 
+# may result in string 
+c(10, "banana", 1, 3, 5, TRUE)
+
+# iterator 
+c(1:10)
+c(3.4:12.5)
+
+# Factors store categorical information 
+sex <- factor(c("Male", "Male", "Female", "Male", "Female", "Female", "Female", "Male", "Female", "Female"))
+sex
+
+# You can coerce a factor
+as.character(sex)
+as.numeric(sex)
+
+
+############## Matrices
+X <- matrix(1:12, nrow = 3)
+X
+Y <- matrix(1:12, ncol = 4)
+Y
+Z <- matrix(1:12, ncol = 4, byrow = TRUE)
+Z
+# Col 1
+Z[, 1]
+# Row 2 
+Z[2, ]
+# 1-indexing 
+
+a<-matrix(c(1,2,3,4), nrow = 2)
+a
+matrix(c(1,2,3,4), nrow = 2)
+
+# Matrix addition
+X+Y 
+# Matrix Multiplication 
+X%*%Y
+# Transpose Matrix 
+t(X)
+
+############## Data Frames 
+activity_levels <- data.frame(Sex = sex, Activity = activity, Height = height, Smokes = smokes)
+activity_levels
+View(my_data_frame)
+my_data_frame[row,col]
+#### read csv 
+my_data <- read.csv("file.csv")
+my_data <- read.csv("file.csv", header = TRUE, na.strings = "*")
+my_data <- read.table("file.txt", header = TRUE, na.strings = "*")
+
+############## Missing Values
+y <- c(1,2,3,4,NA)
+is.na(y)
+mydata$v1[mydata$v1==99] <- NA
+mean(y, na.rm=TRUE) 
+
+############## Functions 
+name(arg, arg2, arg3)
+# for docs
+help(sqrt)
+sqrt(9)
+log(100)
+log(100, base=10)
+? mean
+normal_sample<- rnorm(n=100, sd=2, mean=5)
+mean(normal_sample)
+
+# Calculations follow BIDMAS
+(3.6*10^-3 + 7.2*x)/(10+2)
+# 'e' is a keyword for doing 10 to the power of... 
+(3.6e-3 + 7.2*x)/(10+2)
+3.6*10^-3 + 7.2*x/10+2
+
+# Custom Functions
+myfunction <- function(arg1, arg2){
+  # Insert any relevant R Code here
+  product <- arg1+arg2
+  # return statements are closed syntax of what they return like this
+  return (product)
+}
+
+# A function can return a list 
+prodSum <- function(x, y, z){
+  # take the product of the three values
+  product <- x*y*z
+  sum <- x + y + z
+  # return the computed values
+  list(product=product, sum=sum)
+}
+
+############ Flow Control 
+if(x%%2==0){
+  print("even")
+} else {
+  print("odd")
+}
+# you also have else if syntax else if(CONDITION)
+
+
+########## Loops 
+for(index in values){
+  # Run some code
+} 
+
+for(i in 1:10){
+  print(i)
+}
+
+# Take a copy of grades so that I don't overwrite the original data (just in case there's a mistake!)
+grades_scale <- grades
+
+# ncol() calculate the number of columns - i can take the value 1, 2 or 3 
+for(i in 1:ncol(grades_scale)){
+  # calculate the mean
+  m <- mean(grades[,i])
+  # calculate the standard deviation
+  v <- sd(grades[,i])
+  # scale and centre
+  grades_scale[,i] <- (grades[,i] - m)/v
+}
+
+# Create a vector to store the mean - c() creates an empty vector
+body_mass <- c()
+
+# here i will be Adelie, Gentoo and Chinstrap
+for(i in unique(penguins$species)){
+  # calculate the mean
+  body_mass <- c(body_mass, mean(penguins$body_mass_g[penguins$species==i], na.rm=TRUE))
+}
+
+body_mass
+
+while(condition){
+  # Run some code
+} 
+
+x <- 0
+
+while(x<10){
+  x <- x+1
+  print(x)
+}
+
+# Take a copy of grades so that I don't overwrite the original data (just in case there's a mistake!)
+grades_scale <- grades
+
+# Initialise an index variable
+i <- 1
+
+# ncol() calculate the number of columns - i can take the value 1, 2 or 3 
+while(i <= ncol(grades)){
+  # calculate the mean
+  m <- mean(grades[,i])
+  # calculate the variance
+  v <- sd(grades[,i])
+  # scale and centre
+  grades_scale[,i] <- (grades[,i] - m)/v
+  # update the index variable
+  i <- i+1
+}
+
+head(grades_scale)
+
+### Nested loops and matrix multiplication 
+X <- matrix(c(1,2,3,3,4,5,4,5,6),byrow=TRUE, nrow=3)
+y <- c(0,2,4)
+
+# create object for the result
+Xy <- numeric(3)
+# outer loop iterates through the rows
+for(i in 1:nrow(X)){
+  # inner loop for columns - notice the name of the index for the inner loop is j
+  for(j in 1:ncol(X)){
+    Xy[i] <- Xy[i] + X[i,j]*y[j] 
+  }
+}
+
+# The Apply function 
+# Applies a funciton to each row or column of data 
+apply(X, MARGIN, FUN, ...)
+apply(random_data, 2, mean)
+apply(random_data, 2, mean, na.rm=TRUE)
+
+# lapply
+# The arguments stay the same minus the value for row vs columns
+lapply(random_data, mean, na.rm=TRUE)
+
+
+
