@@ -17,6 +17,14 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
+## Packages
+
+```{r}
+
+```
+
+
+# TODO: Put everything below into notebooks
 
 
 ############## Packages 
@@ -29,12 +37,24 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 # cmd + enter to run it
 # NOTE this file as a whole will not run
 
+## Comments
+
+```{r}
+
+```
+
 # This is a single line comment
 x <- 5 # Comments can also go after code
 
 'This is a multi-line comment
 It can span several lines
 But its less commonly used than # comments'
+
+## Types
+
+```{r}
+
+```
 
 # Numeric Type
 a <- 1
@@ -60,7 +80,12 @@ class(x)
 y <- FALSE
 y
 
-############## Expressions and evaluations
+
+## Expressions and evaluations
+
+```{r}
+
+```
 x == y
 x != y
 
@@ -76,7 +101,12 @@ is.logical(a)
 is.numeric(a)
 is.na(a)
 
-############## Type Casting
+## Expressions and evaluations
+
+```{r}
+
+```
+Type Casting
 
 # 0 casts to false
 as.logical(0)
@@ -101,6 +131,12 @@ as.character(TRUE)
 as.character(10)
 as.character(-2.263)
 
+## Vectors
+
+```{r}
+
+```
+
 ############## Vector Types
 # c() function for creating a vector
 fruits <- c("Apple", "Orange", "Pear", "Grapes")
@@ -118,6 +154,14 @@ height[height>1.7]
 # logical filtering
 smokes[smokes]
 smokes[!smokes]
+
+
+## Matrices
+
+```{r}
+
+```
+
 
 # Coercion 
 as.character(height)
@@ -165,22 +209,47 @@ X%*%Y
 # Transpose Matrix 
 t(X)
 
-############## Data Frames 
+
+## Data Frames
+
+```{r}
+
+```
 activity_levels <- data.frame(Sex = sex, Activity = activity, Height = height, Smokes = smokes)
 activity_levels
 View(my_data_frame)
 my_data_frame[row,col]
+
+
+## Reading Files
+
+```{r}
+
+```
 #### read csv 
 my_data <- read.csv("file.csv")
 my_data <- read.csv("file.csv", header = TRUE, na.strings = "*")
 my_data <- read.table("file.txt", header = TRUE, na.strings = "*")
 
+
+## Sanitising Values
+
+```{r}
+
+```
 ############## Missing Values
 y <- c(1,2,3,4,NA)
 is.na(y)
 mydata$v1[mydata$v1==99] <- NA
 mean(y, na.rm=TRUE) 
 
+
+
+## Functions
+
+```{r}
+
+```
 ############## Functions 
 name(arg, arg2, arg3)
 # for docs
@@ -214,6 +283,14 @@ prodSum <- function(x, y, z){
   # return the computed values
   list(product=product, sum=sum)
 }
+
+
+## Flow Control
+
+```{r}
+
+```
+
 
 ############ Flow Control 
 if(x%%2==0){
@@ -302,15 +379,26 @@ for(i in 1:nrow(X)){
   }
 }
 
+
+## Useful Functions
+
+### lapply
+
+```{r}
+
+```
+
 # The Apply function 
 # Applies a funciton to each row or column of data 
 apply(X, MARGIN, FUN, ...)
 apply(random_data, 2, mean)
 apply(random_data, 2, mean, na.rm=TRUE)
+help(apply)
+# 2nd arg specifies whether to apply over rows or columns
 
 # lapply
 # The arguments stay the same minus the value for row vs columns
 lapply(random_data, mean, na.rm=TRUE)
 
 
-
+TODO: R Promises
