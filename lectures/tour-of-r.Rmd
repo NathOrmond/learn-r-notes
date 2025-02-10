@@ -8,6 +8,7 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
 ```{r}
+# A simple example of R's plotting capabilities
 plot(cars)
 ```
 
@@ -15,390 +16,331 @@ Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by press
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+# 1. Getting Started with R
 
-## Packages
+## 1.1 Required Packages
+Before we begin, let's install the necessary packages:
 
 ```{r}
-
-```
-
-
-# TODO: Put everything below into notebooks
-
-
-############## Packages 
+# Uncomment and run these lines if you haven't installed these packages
 # install.packages(c("learnr", "tidyverse", "remotes"))
 # remotes::install_github("rstudio/gradethis")
-
-
-### A note on using R Studio 
-# You can highlight some code and hit 
-# cmd + enter to run it
-# NOTE this file as a whole will not run
-
-## Comments
-
-```{r}
-
 ```
 
-# This is a single line comment
+## 1.2 Using RStudio
+Key shortcuts to remember:
+- `Cmd/Ctrl + Enter`: Run current line or selection
+- `Cmd/Ctrl + Shift + Enter`: Run current chunk
+- `Cmd/Ctrl + Option/Alt + I`: Insert new chunk
+
+## 1.3 Comments in R
+R supports both single-line and multi-line comments:
+
+```{r}
+# This is a single-line comment
 x <- 5 # Comments can also go after code
 
 'This is a multi-line comment
 It can span several lines
-But its less commonly used than # comments'
-
-## Types
-
-```{r}
-
+But it is less commonly used than # comments'
 ```
 
+# 2. Data Types and Variables
+
+## 2.1 Basic Data Types
+
+```{r}
 # Numeric Type
 a <- 1
-# This shows you the type 
-class(a)
+class(a)  # Shows the type
 
 # Integer Type
-b <- 1L
+b <- 1L  # The 'L' suffix creates an integer
 class(b)
 
-# Strings 
-fruit <- "Apple"
-fruit
-# You can use either single or double quotes to declare a string
-colour <- 'red'
-colour
+# Character/String Type
+fruit <- "Apple"  # Double quotes
+colour <- 'red'   # Single quotes work too
+print(fruit)
+print(colour)
 
-# Logical Types
-# Create an object called x which takes the value TRUE
+# Logical Type
 x <- TRUE
-# print the contents of the object x
-class(x)
 y <- FALSE
-y
+class(x)
+```
 
-
-## Expressions and evaluations
+## 2.2 Type Checking and Comparison
 
 ```{r}
+# Comparison operators
+x == y  # Equal to
+x != y  # Not equal to
 
-```
-x == y
-x != y
+b <- 3
+a > b   # Greater than
+a >= b  # Greater than or equal to
+a <= b  # Less than or equal to
 
-b = 3
-a > b
-a >= b
-a <= b
+# String comparison
+"red" == "Red"  # Case-sensitive
 
-comparison <- x!=y
-"red" == "Red"
-
+# Type checking functions
 is.logical(a)
 is.numeric(a)
 is.na(a)
-
-## Expressions and evaluations
-
-```{r}
-
-```
-Type Casting
-
-# 0 casts to false
-as.logical(0)
-# everything else casts to true
-as.logical(21)
-# strings will not cast to logical
-as.logical("oiashdkjhas")
-
-as.numeric(TRUE)
-as.numeric(FALSE)
-as.numeric("4.5")
-# Rounds DOWN
-as.integer("4.5")
-
-as.character(TRUE)
-## [1] "TRUE"
-as.character(FALSE)
-## [1] "FALSE"
-## Numeric to character
-
-as.character(TRUE)
-as.character(10)
-as.character(-2.263)
-
-## Vectors
-
-```{r}
-
 ```
 
-############## Vector Types
-# c() function for creating a vector
+## 2.3 Type Casting
+
+```{r}
+# Logical casting
+as.logical(0)     # FALSE
+as.logical(21)    # TRUE
+as.logical("text") # NA
+
+# Numeric casting
+as.numeric(TRUE)   # 1
+as.numeric(FALSE)  # 0
+as.numeric("4.5")  # 4.5
+as.integer("4.5")  # 4 (rounds down)
+
+# Character casting
+as.character(TRUE)  # "TRUE"
+as.character(10)    # "10"
+as.character(-2.263) # "-2.263"
+```
+
+# 3. Data Structures
+
+## 3.1 Vectors
+Vectors are one-dimensional arrays that can hold elements of the same type:
+
+```{r}
+# Creating vectors with c()
 fruits <- c("Apple", "Orange", "Pear", "Grapes")
 height <- c(1.68, 1.83, 1.57, 1.87, 1.7, 1.57, 1.73, 1.85, 1.6, 1.58)
 smokes <- c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE)
 
-# first 6 values of a vector
-head(height)
-# first n values
-head(height, n = 4)
-# last n values
-tail(height, n=4)
-# conditional filter
-height[height>1.7]
-# logical filtering
-smokes[smokes]
-smokes[!smokes]
+# Vector operations
+head(height)           # First 6 values
+head(height, n = 4)    # First 4 values
+tail(height, n = 4)    # Last 4 values
 
+# Filtering
+height[height > 1.7]   # Conditional filtering
+smokes[smokes]         # Logical filtering
+smokes[!smokes]        # Negation
 
-## Matrices
-
-```{r}
-
+# Sequence creation
+1:10                  # Integer sequence
+seq(3.4, 12.5)       # Floating point sequence
 ```
 
+## 3.2 Factors
+Factors are used to store categorical data:
 
-# Coercion 
-as.character(height)
-as.logical(height)
-as.numeric(smokes)
+```{r}
+# Creating a factor
+sex <- factor(c("Male", "Male", "Female", "Male", "Female", "Female", 
+                "Female", "Male", "Female", "Female"))
+print(sex)
 
-# Attempts to coerce multiple types 
-# may result in string 
-c(10, "banana", 1, 3, 5, TRUE)
-
-# iterator 
-c(1:10)
-c(3.4:12.5)
-
-# Factors store categorical information 
-sex <- factor(c("Male", "Male", "Female", "Male", "Female", "Female", "Female", "Male", "Female", "Female"))
-sex
-
-# You can coerce a factor
+# Converting factors
 as.character(sex)
-as.numeric(sex)
+as.numeric(sex)  # Returns the internal integer codes
+```
 
+## 3.3 Matrices
+Matrices are 2-dimensional arrays with elements of the same type:
 
-############## Matrices
+```{r}
+# Creating matrices
 X <- matrix(1:12, nrow = 3)
-X
-Y <- matrix(1:12, ncol = 4)
-Y
+print("Matrix X (3x4):")
+print(X)  # Shows a 3x4 matrix:
+#      [,1] [,2] [,3] [,4]
+# [1,]    1    4    7   10
+# [2,]    2    5    8   11
+# [3,]    3    6    9   12
+
+Y <- matrix(1:12, ncol = 4)  # Same as X
 Z <- matrix(1:12, ncol = 4, byrow = TRUE)
-Z
-# Col 1
-Z[, 1]
-# Row 2 
-Z[2, ]
-# 1-indexing 
+print("Matrix Z (3x4):")
+print(Z)  # Shows:
+#      [,1] [,2] [,3] [,4]
+# [1,]    1    2    3    4
+# [2,]    5    6    7    8
+# [3,]    9   10   11   12
 
-a<-matrix(c(1,2,3,4), nrow = 2)
-a
-matrix(c(1,2,3,4), nrow = 2)
+# Matrix indexing
+# Extracts first column: numbers in first position of each row
+print(Z[, 1])  # Returns: [1] 1 5 9
 
-# Matrix addition
-X+Y 
-# Matrix Multiplication 
-X%*%Y
-# Transpose Matrix 
-t(X)
+# Extracts second row: all numbers in row 2
+print(Z[2, ])  # Returns: [1] 5 6 7 8
 
+# Matrix operations
+# Element-wise addition of X + Y
+print(X + Y)   # Shows:
+#      [,1] [,2] [,3] [,4]
+# [1,]    2    8   14   20
+# [2,]    4   10   16   22
+# [3,]    6   12   18   24
 
-## Data Frames
+# Matrix multiplication X %*% Y will fail because:
+# X is 3x4 and Y is 3x4, but we need the number of columns in X
+# to match the number of rows in Y for matrix multiplication
+print("This will produce an error:")
+X %*% Y  # Error: non-conformable arguments
+
+# For a working example of matrix multiplication:
+Y2 <- matrix(1:12, nrow = 4)  # Create a 4x3 matrix instead
+print("Y2 (4x3 matrix):")
+print(Y2)
+print("X %*% Y2 (valid matrix multiplication):")
+print(X %*% Y2)  # This works because 3x4 times 4x3 gives 3x3
+```
+
+## 3.4 Data Frames
+Data frames are 2-dimensional structures that can hold different types of data:
 
 ```{r}
+# Creating a data frame
+activity_levels <- data.frame(
+  Sex = sex,
+  Height = height,
+  Smokes = smokes
+)
+print(activity_levels)
 
+# Accessing data frame elements
+# activity_levels[row, column]
 ```
-activity_levels <- data.frame(Sex = sex, Activity = activity, Height = height, Smokes = smokes)
-activity_levels
-View(my_data_frame)
-my_data_frame[row,col]
 
+# 4. Data Import and Handling
 
-## Reading Files
+## 4.1 Reading Files
 
 ```{r}
+# Reading CSV files
+# my_data <- read.csv("file.csv")
+# my_data <- read.csv("file.csv", header = TRUE, na.strings = "*")
 
+# Reading text files
+# my_data <- read.table("file.txt", header = TRUE, na.strings = "*")
 ```
-#### read csv 
-my_data <- read.csv("file.csv")
-my_data <- read.csv("file.csv", header = TRUE, na.strings = "*")
-my_data <- read.table("file.txt", header = TRUE, na.strings = "*")
 
-
-## Sanitising Values
+## 4.2 Handling Missing Values
 
 ```{r}
-
-```
-############## Missing Values
-y <- c(1,2,3,4,NA)
+# Working with NA values
+y <- c(1, 2, 3, 4, NA)
 is.na(y)
-mydata$v1[mydata$v1==99] <- NA
-mean(y, na.rm=TRUE) 
 
+# Calculating mean with NA removal
+mean(y, na.rm = TRUE)
 
+# Replacing values with NA
+# mydata$v1[mydata$v1 == 99] <- NA
+```
 
-## Functions
+# 5. Functions and Control Flow
+
+## 5.1 Built-in Functions
 
 ```{r}
-
-```
-############## Functions 
-name(arg, arg2, arg3)
-# for docs
-help(sqrt)
+# Mathematical functions
 sqrt(9)
 log(100)
-log(100, base=10)
-? mean
-normal_sample<- rnorm(n=100, sd=2, mean=5)
+log(100, base = 10)
+
+# Statistical functions
+normal_sample <- rnorm(n = 100, sd = 2, mean = 5)
 mean(normal_sample)
 
-# Calculations follow BIDMAS
-(3.6*10^-3 + 7.2*x)/(10+2)
-# 'e' is a keyword for doing 10 to the power of... 
-(3.6e-3 + 7.2*x)/(10+2)
-3.6*10^-3 + 7.2*x/10+2
-
-# Custom Functions
-myfunction <- function(arg1, arg2){
-  # Insert any relevant R Code here
-  product <- arg1+arg2
-  # return statements are closed syntax of what they return like this
-  return (product)
-}
-
-# A function can return a list 
-prodSum <- function(x, y, z){
-  # take the product of the three values
-  product <- x*y*z
-  sum <- x + y + z
-  # return the computed values
-  list(product=product, sum=sum)
-}
-
-
-## Flow Control
-
-```{r}
-
+# Order of operations
+(3.6 * 10^-3 + 7.2 * 2)/(10 + 2)  # Using BIDMAS
+(3.6e-3 + 7.2 * 2)/(10 + 2)       # Using scientific notation
 ```
 
+## 5.2 Custom Functions
 
-############ Flow Control 
-if(x%%2==0){
+```{r}
+# Simple function
+myfunction <- function(arg1, arg2) {
+  product <- arg1 + arg2
+  return(product)
+}
+
+# Function returning multiple values
+prodSum <- function(x, y, z) {
+  product <- x * y * z
+  sum <- x + y + z
+  list(product = product, sum = sum)
+}
+```
+
+## 5.3 Control Structures
+
+### 5.3.1 Conditional Statements
+
+```{r}
+# If-else statement
+x <- 4
+if(x %% 2 == 0) {
   print("even")
 } else {
   print("odd")
 }
-# you also have else if syntax else if(CONDITION)
+```
 
+### 5.3.2 Loops
 
-########## Loops 
-for(index in values){
-  # Run some code
-} 
-
-for(i in 1:10){
+```{r}
+# For loop
+for(i in 1:5) {
   print(i)
 }
 
-# Take a copy of grades so that I don't overwrite the original data (just in case there's a mistake!)
-grades_scale <- grades
-
-# ncol() calculate the number of columns - i can take the value 1, 2 or 3 
-for(i in 1:ncol(grades_scale)){
-  # calculate the mean
-  m <- mean(grades[,i])
-  # calculate the standard deviation
-  v <- sd(grades[,i])
-  # scale and centre
-  grades_scale[,i] <- (grades[,i] - m)/v
-}
-
-# Create a vector to store the mean - c() creates an empty vector
-body_mass <- c()
-
-# here i will be Adelie, Gentoo and Chinstrap
-for(i in unique(penguins$species)){
-  # calculate the mean
-  body_mass <- c(body_mass, mean(penguins$body_mass_g[penguins$species==i], na.rm=TRUE))
-}
-
-body_mass
-
-while(condition){
-  # Run some code
-} 
-
+# While loop
 x <- 0
-
-while(x<10){
-  x <- x+1
+while(x < 5) {
+  x <- x + 1
   print(x)
 }
 
-# Take a copy of grades so that I don't overwrite the original data (just in case there's a mistake!)
-grades_scale <- grades
-
-# Initialise an index variable
-i <- 1
-
-# ncol() calculate the number of columns - i can take the value 1, 2 or 3 
-while(i <= ncol(grades)){
-  # calculate the mean
-  m <- mean(grades[,i])
-  # calculate the variance
-  v <- sd(grades[,i])
-  # scale and centre
-  grades_scale[,i] <- (grades[,i] - m)/v
-  # update the index variable
-  i <- i+1
-}
-
-head(grades_scale)
-
-### Nested loops and matrix multiplication 
-X <- matrix(c(1,2,3,3,4,5,4,5,6),byrow=TRUE, nrow=3)
+# Nested loops example (matrix multiplication)
+X <- matrix(c(1,2,3,3,4,5,4,5,6), byrow = TRUE, nrow = 3)
 y <- c(0,2,4)
-
-# create object for the result
 Xy <- numeric(3)
-# outer loop iterates through the rows
-for(i in 1:nrow(X)){
-  # inner loop for columns - notice the name of the index for the inner loop is j
-  for(j in 1:ncol(X)){
-    Xy[i] <- Xy[i] + X[i,j]*y[j] 
+
+for(i in 1:nrow(X)) {
+  for(j in 1:ncol(X)) {
+    Xy[i] <- Xy[i] + X[i,j] * y[j]
   }
 }
-
-
-## Useful Functions
-
-### lapply
-
-```{r}
-
 ```
 
-# The Apply function 
-# Applies a funciton to each row or column of data 
-apply(X, MARGIN, FUN, ...)
-apply(random_data, 2, mean)
-apply(random_data, 2, mean, na.rm=TRUE)
-help(apply)
-# 2nd arg specifies whether to apply over rows or columns
+# 6. Advanced Functions
 
-# lapply
-# The arguments stay the same minus the value for row vs columns
-lapply(random_data, mean, na.rm=TRUE)
+## 6.1 Apply Family of Functions
 
+```{r}
+# Create sample data
+random_data <- matrix(rnorm(20), nrow = 4)
 
-TODO: R Promises
+# Using apply()
+apply(random_data, 2, mean)  # Apply mean to each column
+apply(random_data, 1, mean)  # Apply mean to each row
+
+# Using lapply()
+lapply(random_data, mean)  # Returns a list
+```
+
+Note: For more information about any function, use the help() function or ? operator:
+```{r}
+# Uncomment to view documentation
+# ?mean
+# help(sqrt)
+```
