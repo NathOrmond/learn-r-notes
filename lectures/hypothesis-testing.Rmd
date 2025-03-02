@@ -1,0 +1,729 @@
+---
+title: "Hypothesis Testing in R"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Introduction to Hypothesis Testing
+
+Hypothesis testing provides a framework for making statistical decisions using data. It's a fundamental concept in inferential statistics that allows us to determine whether an observed effect or relationship in a sample can be generalized to the population.
+
+## The Conceptual Framework
+
+At its core, hypothesis testing involves:
+
+1. Formulating a null hypothesis (H₀) and an alternative hypothesis (H₁)
+2. Collecting data
+3. Computing a test statistic
+4. Determining the probability (p-value) of observing the test statistic if the null hypothesis is true
+5. Making a decision based on the p-value and a pre-defined significance level (α)
+
+From a mathematical perspective, we're quantifying the evidence against H₀ and determining if this evidence is strong enough to reject H₀ in favor of H₁.
+
+## Types of Hypothesis Tests
+
+Different hypothesis tests are appropriate for different types of data and research questions. This notebook focuses on three common tests:
+
+1. **Unpaired Two Sample t-test**: For comparing means between two independent groups
+2. **Paired Two Sample t-test**: For comparing means between paired observations
+3. **Analysis of Variance (ANOVA)**: For comparing means across three or more groups
+
+Let's explore each of these in detail.
+
+# Unpaired Two Sample t-test
+
+## Mathematical Foundation
+
+The unpaired two-sample t-test (also called independent samples t-test) is used when:
+
+- We have two independent samples from different populations
+- The underlying data approximately follow a normal distribution
+- We want to test if the population means are equal
+
+The test statistic is calculated as:
+
+$$t = \frac{\bar{X}_1 - \bar{X}_2}{s_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}}}$$
+
+Where:
+- $\bar{X}_1$ and $\bar{X}_2$ are the sample means
+- $s_p$ is the pooled standard deviation (when assuming equal variances)
+- $n_1$ and $n_2$ are the sample sizes
+
+The pooled standard deviation is:
+
+$$s_p = \sqrt{\frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1 + n_2 - 2}}$$
+
+This follows a t-distribution with $n_1 + n_2 - 2$ degrees of freedom.
+
+## Geometric Interpretation
+
+Geometrically, the t-test can be visualized as measuring the overlap between two probability distributions. The greater the distance between the means (relative to the variability of the data), the less overlap there is, and the more likely we are to reject the null hypothesis.
+
+```{r, echo=FALSE}
+# Function to create a visualization of the t-test
+plot_t_test <- function(m1 = 0, m2 = 2, s1 = 1, s2 = 1, n1 = 10, n2 = 10) {
+  # Calculate t-statistic and p-value
+  pooled_sd <- sqrt(((n1-1)*s1^2 + (n2-1)*s2^2) / (n1 + n2 - 2))
+  t_stat <- (m2 - m1) / (pooled_sd * sqrt(1/n1 + 1/n2))
+  df <- n1 + n2 - 2
+  p_value <- 2 * pt(-abs(t_stat), df)
+  
+  # Create the plot
+  x <- seq(-4, 6, length.out = 1000)
+  y1 <- dnorm(x, mean = m1, sd = s1)
+  y2 <- dnorm(x, mean = m2, sd = s2)
+  
+  plot(x, y1, type = "l", col = "blue", lwd = 2, 
+       xlab = "Value", ylab = "Density", 
+       main = "Visualization of Two Sample t-test")
+  lines(x, y2, col = "red", lwd = 2)
+  
+  # Shade the areas
+  abline(v = m1, col = "blue", lty = 2)
+  abline(v = m2, col = "red", lty = 2)
+  
+  # Add legend
+  legend("topright", legend = c("Group 1", "Group 2"), 
+         col = c("blue", "red"), lwd = 2)
+  
+  # Add t-statistic and p-value
+  mtext(paste("t =", round(t_stat, 2), ", p =", round(p_value, 4)), 
+        side = 3, line = 0.5)
+}
+
+# Create plot
+plot_t_test(m1 = 63.9, m2 = 65.6, s1 = 2, s2 = 2)
+```
+
+## Example 1: Comparing Pulse Rates Between Genders
+
+Let's examine if there's a difference in pulse rates between males and females.
+
+### Data Preparation
+
+```{r}
+# Create the data frame
+pulse <- data.frame(
+  Males = c(65, 62, 63, 64, 64, 68, 66, 62, 62, 63),
+  Females = c(64, 67, 66, 67, 66, 69, 63, 67, 62, 65)
+)
+
+# View the data
+head(pulse)
+```
+
+### Visual Exploration
+
+Before conducting the test, let's visualize the data:
+
+```{r}
+# Reshape data for plotting
+pulse_long <- data.frame(
+  Pulse = c(pulse$Males, pulse$Females),
+  Gender = factor(c(rep("Male", 10), rep("Female", 10)))
+)
+
+# Create boxplot
+boxplot(Pulse ~ Gender, data = pulse_long, 
+        col = c("lightblue", "lightpink"),
+        main = "Pulse Rates by Gender",
+        ylab = "Pulse Rate")
+
+# Add points to show the raw data
+stripchart(Pulse ~ Gender, data = pulse_long, 
+           vertical = TRUE, method = "jitter", 
+           add = TRUE, pch = 19, col = "darkgray")
+```
+
+### Two-sided Test (Equal Variances)
+
+We'll test the null hypothesis that the means are equal against the alternative that they are different:
+
+H₀: μₘ = μf  
+H₁: μₘ ≠ μf
+
+```{r}
+# Conduct two-sided t-test with equal variances
+t_test_result <- t.test(pulse$Males, pulse$Females, 
+                         alternative = "two.sided", 
+                         var.equal = TRUE)
+
+# Display the result
+t_test_result
+```
+
+**Interpretation**: The p-value is `r round(t_test_result$p.value, 3)`, which is greater than our significance level of 0.05. Therefore, we fail to reject the null hypothesis and conclude that there is insufficient evidence to suggest a difference in mean pulse rates between males and females.
+
+### One-sided Test
+
+Now, let's test if the female pulse rate is higher than the male pulse rate:
+
+H₀: μf = μm  
+H₁: μf > μm
+
+For this, we'll reshape our data to use the formula interface in R:
+
+```{r}
+# Reshape data in a different format
+pulse2 <- data.frame(
+  Sex = factor(c(rep("Female", 10), rep("Male", 10))),
+  Pulse = c(64, 67, 66, 67, 66, 69, 63, 67, 62, 65,
+            65, 62, 63, 64, 64, 68, 66, 62, 62, 63)
+)
+
+# Conduct one-sided t-test
+t_test_one_sided <- t.test(Pulse ~ Sex, data = pulse2, 
+                           alternative = "greater", 
+                           var.equal = TRUE)
+
+# Display the result
+t_test_one_sided
+```
+
+**Interpretation**: The p-value is `r round(t_test_one_sided$p.value, 3)`, which is less than our significance level of 0.05. Therefore, we reject the null hypothesis and conclude that the female pulse rate is significantly higher than the male pulse rate.
+
+### R Code Breakdown
+
+In R, there are two ways to specify a t-test:
+
+1. **Direct method**: `t.test(x, y, ...)` where x and y are vectors
+   ```r
+   t.test(pulse$Males, pulse$Females, alternative = "two.sided", var.equal = TRUE)
+   ```
+
+2. **Formula method**: `t.test(outcome ~ group, ...)` 
+   ```r
+   t.test(Pulse ~ Sex, data = pulse2, alternative = "greater", var.equal = TRUE)
+   ```
+
+Key parameters:
+- `alternative`: Specifies the alternative hypothesis ("two.sided", "less", or "greater")
+- `var.equal`: Whether to assume equal variances (TRUE) or not (FALSE)
+- `paired`: Whether the observations are paired (TRUE) or independent (FALSE)
+
+## Statistical Considerations
+
+1. **Equal vs. Unequal Variances**: The standard t-test assumes equal variances. If this assumption is violated, Welch's t-test should be used (set `var.equal = FALSE` in R).
+
+2. **Effect Size**: The t-test tells us if a difference is statistically significant, but not if it's practically meaningful. For that, we can calculate Cohen's d:
+
+```{r}
+# Calculate Cohen's d
+cohens_d <- function(x1, x2) {
+  m1 <- mean(x1)
+  m2 <- mean(x2)
+  s1 <- sd(x1)
+  s2 <- sd(x2)
+  n1 <- length(x1)
+  n2 <- length(x2)
+  
+  # Pooled standard deviation
+  s_pooled <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
+  
+  # Cohen's d
+  d <- (m1 - m2) / s_pooled
+  return(d)
+}
+
+d <- cohens_d(pulse$Males, pulse$Females)
+cat("Cohen's d:", round(d, 2), "\n")
+```
+
+A Cohen's d of -0.85 indicates a large effect size, suggesting that while our first test didn't reach statistical significance (likely due to small sample size), the observed difference may be practically meaningful.
+
+# Paired Two Sample t-test
+
+## Mathematical Foundation
+
+The paired t-test is used when:
+
+- We have pairs of observations
+- Each pair is naturally related (e.g., before/after measurements on the same subject)
+- We want to test if the mean difference is zero
+
+The test statistic is calculated as:
+
+$$t = \frac{\bar{d}}{s_d / \sqrt{n}}$$
+
+Where:
+- $\bar{d}$ is the mean of the differences
+- $s_d$ is the standard deviation of the differences
+- $n$ is the number of pairs
+
+This follows a t-distribution with $n-1$ degrees of freedom.
+
+## Geometric Interpretation
+
+Geometrically, the paired t-test focuses on the distribution of differences between paired observations. If the null hypothesis is true (the mean difference is zero), the distribution of differences should be centered at zero.
+
+```{r, echo=FALSE}
+# Function to visualize paired t-test
+visualize_paired_test <- function(diffs, main = "Distribution of Differences") {
+  hist(diffs, breaks = 10, prob = TRUE, 
+       main = main, 
+       xlab = "Difference (Group 2 - Group 1)")
+  
+  # Add density curve
+  curve(dnorm(x, mean = mean(diffs), sd = sd(diffs)), 
+        add = TRUE, col = "red", lwd = 2)
+  
+  # Add mean line
+  abline(v = mean(diffs), col = "blue", lwd = 2, lty = 2)
+  
+  # Add zero line
+  abline(v = 0, col = "darkgreen", lwd = 2, lty = 3)
+  
+  # Add legend
+  legend("topright", 
+         legend = c("Density", "Mean Difference", "Zero (H₀)"), 
+         col = c("red", "blue", "darkgreen"), 
+         lwd = 2, lty = c(1, 2, 3))
+  
+  # Add t-test results
+  t_test <- t.test(diffs)
+  mtext(paste("t =", round(t_test$statistic, 2), 
+              ", p =", round(t_test$p.value, 4)), 
+        side = 3, line = 0.5)
+}
+```
+
+## Example 2: Comparing Student Performance in Different Subjects
+
+We'll analyze if there's a difference in student performance between Mathematics and Physics.
+
+### Data Preparation
+
+```{r}
+# Create the data frame
+grades <- data.frame(
+  Student = 1:7,
+  Maths = c(52, 48, 62, 70, 68, 42, 57),
+  Physics = c(47, 63, 71, 75, 82, 45, 57)
+)
+
+# Calculate differences
+grades$Diff <- grades$Physics - grades$Maths
+
+# View the data
+grades
+```
+
+### Visual Exploration
+
+Let's visualize the paired data:
+
+```{r}
+# Plot the paired data
+plot(grades$Maths, grades$Physics, 
+     xlab = "Mathematics Score", ylab = "Physics Score",
+     main = "Math vs Physics Scores",
+     pch = 19, col = "blue")
+
+# Add diagonal line (x = y)
+abline(0, 1, col = "red", lty = 2)
+
+# Add student IDs
+text(grades$Maths, grades$Physics, labels = grades$Student, 
+     pos = 4, cex = 0.8, col = "darkgreen")
+
+# Visualize the differences
+visualize_paired_test(grades$Diff, main = "Physics - Math Score Differences")
+```
+
+Points above the diagonal line represent students who performed better in Physics than in Mathematics.
+
+### Conducting the Paired t-test
+
+We'll test the null hypothesis that there's no difference in mean scores against the alternative that Physics scores are higher:
+
+H₀: μₘ = μₚ (or μₚ - μₘ = 0)  
+H₁: μₘ < μₚ (or μₚ - μₘ > 0)
+
+```{r}
+# Conduct the paired t-test (one-sided)
+paired_test <- t.test(grades$Physics, grades$Maths, 
+                      paired = TRUE, 
+                      alternative = "greater")
+
+# Display the result
+paired_test
+
+# Calculate and summarize the differences
+cat("Mean difference (Physics - Maths):", mean(grades$Diff), "\n")
+```
+
+**Interpretation**: The p-value is `r round(paired_test$p.value, 3)`, which is less than our significance level of 0.05. Therefore, we reject the null hypothesis and conclude that Physics scores are significantly higher than Mathematics scores.
+
+### Alternative R Syntax
+
+We can also use the formula syntax for paired tests:
+
+```{r}
+# Reshape data correctly for paired test with formula
+grades_long <- data.frame(
+  Subject = factor(rep(c("Maths", "Physics"), each = 7)),
+  Score = c(grades$Maths, grades$Physics),
+  Student = factor(rep(1:7, 2))
+)
+
+# Most straightforward approach - directly compare the vectors
+t.test(grades$Physics, grades$Maths, 
+       paired = TRUE, 
+       alternative = "greater")  # Physics > Maths
+```
+
+## Statistical Considerations
+
+1. **Correlation**: The paired t-test is more powerful than an independent t-test when the pairs are positively correlated:
+
+```{r}
+# Calculate correlation between Maths and Physics scores
+cor_val <- cor(grades$Maths, grades$Physics)
+cat("Correlation between Maths and Physics scores:", round(cor_val, 2), "\n")
+```
+
+A correlation of 0.8 indicates that students who perform well in Mathematics also tend to perform well in Physics, justifying our use of a paired test.
+
+2. **Effect Size**: For paired tests, we can calculate Cohen's d for repeated measures:
+
+```{r}
+# Cohen's d for paired data
+cohens_d_paired <- mean(grades$Diff) / sd(grades$Diff)
+cat("Cohen's d (paired):", round(cohens_d_paired, 2), "\n")
+```
+
+This is a large effect size, consistent with our statistically significant result.
+
+# Analysis of Variance (ANOVA)
+
+## Mathematical Foundation
+
+ANOVA is used when:
+
+- We have three or more groups
+- We want to test if at least one group mean differs from the others
+
+The test statistic is the F-ratio:
+
+$$F = \frac{\text{Between-group variability}}{\text{Within-group variability}}$$
+
+Specifically:
+
+$$F = \frac{MSB}{MSW}$$
+
+Where:
+- MSB is the Mean Square Between groups
+- MSW is the Mean Square Within groups
+
+This follows an F-distribution with $(k-1, N-k)$ degrees of freedom, where $k$ is the number of groups and $N$ is the total sample size.
+
+## Geometric Interpretation
+
+Geometrically, ANOVA can be visualized as comparing the variability between group means to the variability within groups. When between-group variability is large relative to within-group variability, we have evidence that at least one group differs from others.
+
+```{r, echo=FALSE}
+# Function to visualize ANOVA
+visualize_anova <- function(data, x_var, y_var) {
+  # Convert to factors if necessary
+  data[[x_var]] <- factor(data[[x_var]])
+  
+  # Calculate group means
+  group_means <- tapply(data[[y_var]], data[[x_var]], mean)
+  grand_mean <- mean(data[[y_var]])
+  
+  # Create plot
+  boxplot(data[[y_var]] ~ data[[x_var]], 
+          main = "ANOVA Visualization",
+          xlab = x_var, ylab = y_var,
+          col = rainbow(length(levels(data[[x_var]]))))
+  
+  # Add group means
+  points(1:length(group_means), group_means, pch = 18, cex = 1.5, col = "blue")
+  
+  # Add grand mean
+  abline(h = grand_mean, col = "red", lwd = 2, lty = 2)
+  
+  # Add legend
+  legend("topright", 
+         legend = c("Group Means", "Grand Mean"), 
+         pch = c(18, NA), 
+         lty = c(NA, 2),
+         col = c("blue", "red"),
+         lwd = c(NA, 2))
+  
+  # Run ANOVA and add result
+  formula <- as.formula(paste(y_var, "~", x_var))
+  anova_result <- aov(formula, data = data)
+  anova_summary <- summary(anova_result)
+  
+  # Extract F and p values
+  f_value <- anova_summary[[1]]["F value"][[1]][1]
+  p_value <- anova_summary[[1]]["Pr(>F)"][[1]][1]
+  
+  mtext(paste("F =", round(f_value, 2), ", p =", round(p_value, 4)), 
+        side = 3, line = 0.5)
+}
+```
+
+## Example 3: Comparing the Effects of Different Grip Types
+
+We'll analyze if there's a difference in upper body power (UBP) among three types of ski pole grips.
+
+### Data Preparation
+
+```{r}
+# Create the data frame
+grip_data <- data.frame(
+  ubp = c(168.2, 161.4, 163.2, 166.7, 173.0, 173.3, 160.1, 161.2, 166.8),
+  grip = factor(c(rep("classic", 3), rep("integrated", 3), rep("modern", 3)))
+)
+
+# View the data
+grip_data
+```
+
+### Visual Exploration
+
+Let's visualize the data:
+
+```{r}
+# Visualize ANOVA
+visualize_anova(grip_data, "grip", "ubp")
+```
+
+The visualization shows the distribution of UBP values for each grip type, with the group means (blue diamonds) and the grand mean (red dashed line).
+
+### Conducting ANOVA
+
+We'll test the null hypothesis that all group means are equal:
+
+H₀: μ₁ = μ₂ = μ₃  
+H₁: At least one mean differs
+
+```{r}
+# Fit the ANOVA model
+anova_model <- aov(ubp ~ grip, data = grip_data)
+
+# Display the ANOVA table
+summary(anova_model)
+```
+
+**Interpretation**: The p-value is 0.0649, which is slightly above our significance level of 0.05. Therefore, we fail to reject the null hypothesis and conclude that there is insufficient evidence to suggest a difference in mean UBP among the three grip types.
+
+### Understanding the ANOVA Table
+
+The ANOVA table provides:
+
+1. **Source of Variation**: Between groups (grip) and within groups (Residuals)
+2. **Degrees of Freedom (Df)**: k-1 for between groups and N-k for within groups
+3. **Sum of Squares (Sum Sq)**: Total variability
+4. **Mean Squares (Mean Sq)**: Sum of squares divided by degrees of freedom
+5. **F value**: Ratio of between-group variability to within-group variability
+6. **Pr(>F)**: P-value for the F statistic
+
+## Post-hoc Tests
+
+If the ANOVA is significant, we typically conduct post-hoc tests to determine which specific groups differ. Even though our ANOVA wasn't significant, let's demonstrate how to perform these tests:
+
+```{r}
+# Tukey's Honest Significant Difference test
+TukeyHSD(anova_model)
+
+# Visualize the Tukey's test results
+plot(TukeyHSD(anova_model))
+```
+
+Tukey's HSD test compares all pairs of groups and adjusts p-values for multiple comparisons.
+
+## Statistical Considerations
+
+1. **Assumptions**: ANOVA assumes normality, homogeneity of variances, and independence of observations.
+
+2. **Effect Size**: We can calculate eta-squared (η²) to measure the proportion of variance explained:
+
+```{r}
+# Calculate eta-squared
+anova_table <- summary(anova_model)[[1]]
+eta_squared <- anova_table[1, "Sum Sq"] / sum(anova_table[, "Sum Sq"])
+cat("Eta-squared:", round(eta_squared, 3), "\n")
+```
+
+An eta-squared of 0.596 suggests that grip type explains about 59.6% of the variance in UBP, which is a large effect size. This suggests that with a larger sample size, we might find statistically significant differences.
+
+# Connecting the Tests: A Unified Framework
+
+## Linear Models Perspective
+
+All the tests we've explored can be formulated as linear models:
+
+```{r}
+# T-test as a linear model
+lm_ttest <- lm(Pulse ~ Sex, data = pulse2)
+summary(lm_ttest)
+
+# ANOVA as a linear model
+lm_anova <- lm(ubp ~ grip, data = grip_data)
+summary(lm_anova)
+```
+
+This connection reveals that:
+- A t-test is a special case of ANOVA with two groups
+- The t-statistic squared equals the F-statistic when comparing two groups
+- All these tests are part of the general linear model framework
+
+## Choosing the Right Test
+
+Here's a decision tree for selecting the appropriate test:
+
+1. **One sample?** → One-sample t-test
+2. **Two samples?**
+   - **Paired observations?** → Paired t-test
+   - **Independent observations?** → Independent t-test
+3. **Three or more samples?**
+   - **One factor?** → One-way ANOVA
+   - **Two or more factors?** → Factorial ANOVA
+
+# Practical Tips for Effective Hypothesis Testing in R
+
+1. **Always visualize your data first**
+   ```r
+   boxplot(y ~ group)  # For categorical predictors
+   plot(y ~ x)         # For continuous predictors
+   ```
+
+2. **Check assumptions**
+   ```r
+   # Normality check
+   shapiro.test(residuals(model))
+   
+   # Equal variance check
+   bartlett.test(y ~ group)
+   ```
+
+3. **Use appropriate syntax for your data structure**
+   ```r
+   # For wide format data
+   t.test(group1, group2, paired = TRUE)
+   
+   # For long format data
+   t.test(outcome ~ group, data = df, paired = FALSE)
+   ```
+
+4. **Report effect sizes along with p-values**
+   ```r
+   # Cohen's d for t-tests
+   d <- mean_diff / pooled_sd
+   
+   # Eta-squared for ANOVA
+   eta_sq <- sum_sq_between / sum_sq_total
+   ```
+
+5. **Use diagnostic plots for ANOVA**
+   ```r
+   model <- aov(y ~ group)
+   plot(model)  # Show diagnostic plots
+   ```
+
+# Conclusion
+
+Hypothesis testing provides a framework for making statistical inferences from data. By understanding both the mathematical foundations and the practical implementation in R, you can effectively analyze your data and draw meaningful conclusions.
+
+Remember that hypothesis testing is just one tool in the statistical toolkit. It's important to combine it with effect size measures, confidence intervals, and thoughtful interpretation to develop a comprehensive understanding of your data.
+
+# R Code Reference Sheet
+
+```{r, eval=FALSE}
+# Creating example data to use in the examples
+# Example data for independent t-test
+x <- c(4, 5, 6, 5, 4)
+y <- c(2, 3, 1, 2, 2)
+
+# Example data for formula-based t-test
+df_ttest <- data.frame(
+  outcome = c(x, y),
+  group = factor(c(rep("A", length(x)), rep("B", length(y))))
+)
+
+# Example data for paired t-test
+before <- c(5, 6, 4, 7, 5)
+after <- c(7, 8, 6, 8, 9)
+
+# Example data for formula-based paired t-test
+df_paired <- data.frame(
+  score = c(before, after),
+  time = factor(c(rep("Before", length(before)), rep("After", length(after)))),
+  subject = factor(rep(1:length(before), 2))
+)
+
+# Example data for ANOVA
+group1 <- c(18, 21, 16, 22, 19)
+group2 <- c(22, 25, 17, 24, 16)
+group3 <- c(15, 12, 16, 11, 14)
+
+df_anova <- data.frame(
+  outcome = c(group1, group2, group3),
+  group = factor(c(rep("A", length(group1)), 
+                   rep("B", length(group2)), 
+                   rep("C", length(group3))))
+)
+
+# Now we can run our examples with actual data
+```
+
+After getting data
+
+```{r, eval=FALSE}
+# Independent t-test - direct method
+t_test_result <- t.test(x, y, alternative = "two.sided", var.equal = TRUE)
+t_test_result
+
+# Independent t-test - formula method
+t_test_formula <- t.test(outcome ~ group, data = df_ttest, 
+                         alternative = "two.sided", var.equal = TRUE)
+t_test_formula
+
+# Paired t-test - direct method
+paired_test <- t.test(after, before, paired = TRUE)
+paired_test
+
+# One-way ANOVA
+anova_model <- aov(outcome ~ group, data = df_anova)
+summary(anova_model)
+
+# Post-hoc tests (only if ANOVA is significant)
+TukeyHSD(anova_model)
+
+# Effect sizes
+# Cohen's d for t-test
+cohens_d <- function(x1, x2) {
+  m1 <- mean(x1)
+  m2 <- mean(x2)
+  s1 <- sd(x1)
+  s2 <- sd(x2)
+  n1 <- length(x1)
+  n2 <- length(x2)
+  s_pooled <- sqrt(((n1-1)*s1^2 + (n2-1)*s2^2) / (n1+n2-2))
+  d <- (m1 - m2) / s_pooled
+  return(d)
+}
+
+# Calculate Cohen's d for our t-test example
+d_value <- cohens_d(x, y)
+cat("Cohen's d:", round(d_value, 2), "\n")
+
+# Eta-squared for ANOVA
+eta_squared <- function(model) {
+  anova_table <- summary(model)[[1]]
+  ss_effect <- anova_table[1, "Sum Sq"]
+  ss_total <- sum(anova_table[, "Sum Sq"])
+  return(ss_effect / ss_total)
+}
+
+# Calculate eta-squared for our ANOVA example
+eta_sq <- eta_squared(anova_model)
+cat("Eta-squared:", round(eta_sq, 3), "\n")
+```
+
