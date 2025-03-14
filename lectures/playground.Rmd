@@ -1,0 +1,440 @@
+---
+title: "Company Salary Distribution Analysis"
+author: "Data Analyst"
+date: "14 March 2025"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+# Check and install required packages if needed
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("scales")) install.packages("scales")
+if (!require("knitr")) install.packages("knitr")
+if (!require("tidyr")) install.packages("tidyr")
+
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(knitr)
+library(tidyr)
+```
+
+# Salary Distribution Analysis
+
+## Company Parameters
+
+```{r company_params}
+# Company parameters
+total_monthly_salary <- 461000  # Total monthly salary expenditure in GBP
+num_employees <- 70             # Number of employees
+mean_salary <- total_monthly_salary / num_employees  # Mean monthly salary
+
+# Display basic statistics
+company_stats <- data.frame(
+  Statistic = c("Total Monthly Salary Expenditure", "Number of Employees", "Mean Monthly Salary"),
+  Value = c(paste0("£", format(total_monthly_salary, big.mark=",")), 
+            num_employees, 
+            paste0("£", format(mean_salary, digits=2, big.mark=",", nsmall=2)))
+)
+
+kable(company_stats, align = "lr", caption = "Company Parameters")
+```
+
+## Log-normal Distribution Parameters
+
+We model the salary distribution using a log-normal distribution, which is commonly used for modelling salary data due to its right-skewed nature.
+
+```{r lognormal_params}
+# Assume a coefficient of variation (CV) for salaries
+cv <- 0.5  # Typical for medium-sized companies
+
+# Calculate log-normal parameters
+sigma_squared <- log(1 + cv^2)
+sigma <- sqrt(sigma_squared)
+mu <- log(mean_salary) - sigma_squared/2
+
+# Display log-normal parameters
+lognormal_params <- data.frame(
+  Parameter = c("μ (mu)", "σ (sigma)", "σ² (sigma squared)"),
+  Value = c(round(mu, 4), round(sigma, 4), round(sigma_squared, 4)),
+  Description = c("Mean of logarithm of salary", 
+                  "Standard deviation of logarithm of salary", 
+                  "Variance of logarithm of salary")
+)
+
+kable(lognormal_params, align = "llr", caption = "Log-normal Distribution Parameters")
+```
+
+## Visualising the Salary Distribution
+
+### Probability Density Function
+
+```{r pdf_plot, fig.width=10, fig.height=6}
+# Create sequence of salary values
+salary_seq <- seq(1000, 25000, by = 100)
+
+# Calculate PDF values
+pdf_values <- dlnorm(salary_seq, meanlog = mu, sdlog = sigma)
+
+# Create data frame for plotting
+pdf_df <- data.frame(
+  Salary = salary_seq,
+  Density = pdf_values
+)
+
+# Plot PDF
+pdf_plot <- ggplot(pdf_df, aes(x = Salary, y = Density)) +
+  geom_line(size = 1, color = "steelblue") +
+  geom_vline(xintercept = mean_salary, linetype = "dashed", color = "red", size = 1) +
+  geom_vline(xintercept = exp(mu), linetype = "dotted", color = "darkgreen", size = 1) +
+  annotate("text", x = mean_salary + 1500, y = max(pdf_values) * 0.9, 
+           label = "Mean", color = "red") +
+  annotate("text", x = exp(mu) - 1500, y = max(pdf_values) * 0.9, 
+           label = "Median", color = "darkgreen") +
+  labs(
+    title = "Log-normal Probability Density Function of Salary Distribution",
+    x = "Monthly Salary (£)",
+    y = "Density"
+  ) +
+  scale_x_continuous(labels = scales::comma_format(prefix = "£")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+print(pdf_plot)
+```
+
+### Cumulative Distribution Function
+
+```{r cdf_plot, fig.width=10, fig.height=6}
+# Calculate CDF values
+cdf_values <- plnorm(salary_seq, meanlog = mu, sdlog = sigma)
+
+# Create data frame for plotting
+cdf_df <- data.frame(
+  Salary = salary_seq,
+  Cumulative_Probability = cdf_values
+)
+
+# Plot CDF
+cdf_plot <- ggplot(cdf_df, aes(x = Salary, y = Cumulative_Probability)) +
+  geom_line(size = 1, color = "darkred") +
+  labs(
+    title = "Cumulative Distribution Function of Salary Distribution",
+    x = "Monthly Salary (£)",
+    y = "Cumulative Probability"
+  ) +
+  scale_x_continuous(labels = scales::comma_format(prefix = "£")) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+print(cdf_plot)
+```
+
+## Salary Percentiles
+
+```{r percentiles}
+# Define percentiles of interest
+percentiles <- c(0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99)
+
+# Calculate salary at each percentile
+salary_percentiles <- qlnorm(percentiles, meanlog = mu, sdlog = sigma)
+
+# Create data frame for display
+percentile_df <- data.frame(
+  Percentile = paste0(percentiles * 100, "%"),
+  Monthly_Salary = paste0("£", format(round(salary_percentiles), big.mark=",")),
+  Annual_Salary = paste0("£", format(round(salary_percentiles * 12), big.mark=",")),
+  Estimated_Employees = round(c(
+    num_employees * 0.10,  # 10th percentile
+    num_employees * 0.15,  # 25th percentile
+    num_employees * 0.25,  # 50th percentile
+    num_employees * 0.15,  # 75th percentile
+    num_employees * 0.10,  # 90th percentile
+    num_employees * 0.05,  # 95th percentile
+    num_employees * 0.03   # 99th percentile
+  ))
+)
+
+# Add executive level
+percentile_df <- rbind(percentile_df, data.frame(
+  Percentile = "Top (executives)",
+  Monthly_Salary = "£22,500+",
+  Annual_Salary = "£270,000+",
+  Estimated_Employees = 2
+))
+
+kable(percentile_df, align = "llrr", caption = "Salary Percentiles and Distribution of Employees")
+```
+
+## Simulating Employee Salaries
+
+Let's simulate individual salaries for the 70 employees based on our log-normal distribution.
+
+```{r simulate_employees, fig.width=10, fig.height=6}
+# Set seed for reproducibility
+set.seed(123)
+
+# Simulate 70 salaries from log-normal distribution
+simulated_salaries <- rlnorm(num_employees, meanlog = mu, sdlog = sigma)
+
+# Adjust to ensure total matches exactly £461,000
+adjustment_factor <- total_monthly_salary / sum(simulated_salaries)
+simulated_salaries <- simulated_salaries * adjustment_factor
+
+# Create data frame for simulated employees
+employee_df <- data.frame(
+  Employee_ID = 1:num_employees,
+  Monthly_Salary = simulated_salaries
+) %>%
+  arrange(desc(Monthly_Salary))
+
+# Create histogram of simulated salaries
+salary_hist <- ggplot(employee_df, aes(x = Monthly_Salary)) +
+  geom_histogram(bins = 15, fill = "steelblue", color = "black", alpha = 0.7) +
+  geom_vline(xintercept = mean_salary, linetype = "dashed", color = "red", size = 1) +
+  annotate("text", x = mean_salary + 1500, y = 10, 
+           label = "Mean", color = "red") +
+  labs(
+    title = "Histogram of Simulated Employee Salaries",
+    x = "Monthly Salary (£)",
+    y = "Number of Employees"
+  ) +
+  scale_x_continuous(labels = scales::comma_format(prefix = "£")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+print(salary_hist)
+
+# Display top 10 highest-paid employees
+top_10 <- head(employee_df, 10) %>%
+  mutate(
+    # Store numeric values for calculations
+    Monthly_Value = Monthly_Salary,
+    Annual_Value = Monthly_Value * 12,
+    # Format for display
+    Monthly_Salary = paste0("£", format(round(Monthly_Value), big.mark=",")),
+    Annual_Salary = paste0("£", format(round(Annual_Value), big.mark=","))
+  ) %>%
+  select(Employee_ID, Monthly_Salary, Annual_Salary)
+
+kable(top_10, align = "rrr", caption = "Top 10 Highest-Paid Employees (Simulated)")
+
+```
+
+## Comparison with Normal Distribution
+
+To highlight why log-normal is more appropriate than normal distribution for salaries:
+
+```{r normal_comparison, fig.width=10, fig.height=6}
+# Calculate normal distribution parameters that would give same mean
+normal_mean <- mean_salary
+normal_sd <- mean_salary * cv  # Using same coefficient of variation
+
+# Generate normal pdf
+normal_pdf <- dnorm(salary_seq, mean = normal_mean, sd = normal_sd)
+
+# Combined data frame for comparison
+comparison_df <- data.frame(
+  Salary = rep(salary_seq, 2),
+  Density = c(pdf_values, normal_pdf),
+  Distribution = rep(c("Log-normal", "Normal"), each = length(salary_seq))
+)
+
+# Plot comparison
+comparison_plot <- ggplot(comparison_df, aes(x = Salary, y = Density, color = Distribution, linetype = Distribution)) +
+  geom_line(size = 1) +
+  geom_vline(xintercept = mean_salary, linetype = "dashed", color = "black", size = 0.5) +
+  annotate("text", x = mean_salary + 1500, y = max(comparison_df$Density) * 0.9, 
+           label = "Mean", color = "black") +
+  labs(
+    title = "Comparison of Log-normal vs Normal Distribution for Salaries",
+    x = "Monthly Salary (£)",
+    y = "Density"
+  ) +
+  scale_x_continuous(labels = scales::comma_format(prefix = "£")) +
+  scale_color_manual(values = c("Log-normal" = "steelblue", "Normal" = "darkred")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "top"
+  )
+
+print(comparison_plot)
+```
+
+## Salary Distribution by Percentile Bands
+
+```{r percentile_bands, fig.width=10, fig.height=6}
+# Create bands based on percentiles
+bands <- data.frame(
+  Band = c("Low (0-25%)", "Lower-Middle (25-50%)", "Upper-Middle (50-75%)", "High (75-90%)", "Very High (90-100%)"),
+  Lower = c(0, 0.25, 0.5, 0.75, 0.9),
+  Upper = c(0.25, 0.5, 0.75, 0.9, 1),
+  Color = c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854")
+)
+
+# Calculate salary ranges for each band
+bands$Lower_Salary <- qlnorm(bands$Lower, meanlog = mu, sdlog = sigma)
+bands$Upper_Salary <- qlnorm(bands$Upper, meanlog = mu, sdlog = sigma)
+bands$Midpoint_Salary <- (bands$Lower_Salary + bands$Upper_Salary) / 2
+bands$Employee_Count <- round(num_employees * (bands$Upper - bands$Lower))
+bands$Total_Band_Salary <- bands$Midpoint_Salary * bands$Employee_Count
+bands$Percentage_Budget <- bands$Total_Band_Salary / total_monthly_salary * 100
+
+# Format for display
+bands_display <- bands %>%
+  select(Band, Lower_Salary, Upper_Salary, Employee_Count, Percentage_Budget) %>%
+  mutate(
+    Salary_Range = paste0("£", format(round(Lower_Salary), big.mark=","), " - £", 
+                        format(round(Upper_Salary), big.mark=",")),
+    Percentage_Budget = paste0(round(Percentage_Budget, 1), "%")
+  ) %>%
+  select(Band, Salary_Range, Employee_Count, Percentage_Budget)
+
+kable(bands_display, align = "llrr", 
+      caption = "Salary Distribution by Percentile Bands")
+
+# Create visualization of employee count and budget allocation by band
+band_summary <- bands %>%
+  select(Band, Employee_Count, Percentage_Budget, Color) %>%
+  pivot_longer(cols = c(Employee_Count, Percentage_Budget),
+               names_to = "Metric", 
+               values_to = "Value")
+
+# Create grouped bar chart
+band_plot <- ggplot(band_summary, aes(x = Band, y = Value, fill = Band)) +
+  geom_col() +
+  facet_wrap(~Metric, scales = "free_y", 
+             labeller = labeller(Metric = c("Employee_Count" = "Number of Employees", 
+                                           "Percentage_Budget" = "% of Salary Budget"))) +
+  scale_fill_manual(values = bands$Color) +
+  labs(
+    title = "Distribution of Employees and Salary Budget by Band",
+    x = "Salary Band",
+    y = "Value"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    legend.position = "none"
+  )
+
+print(band_plot)
+```
+
+## Lorenz Curve and Gini Coefficient
+
+The Lorenz curve and Gini coefficient are common measures of income inequality:
+
+```{r lorenz_gini, fig.width=10, fig.height=6}
+# Sort simulated salaries
+sorted_salaries <- sort(simulated_salaries)
+
+# Calculate cumulative percentage of employees and salaries
+cum_employees <- (1:num_employees) / num_employees
+cum_salaries <- cumsum(sorted_salaries) / sum(sorted_salaries)
+
+# Create data frame for Lorenz curve
+lorenz_df <- data.frame(
+  cum_employees = c(0, cum_employees),
+  cum_salaries = c(0, cum_salaries)
+)
+
+# Calculate Gini coefficient
+gini <- 1 - 2 * sum(diff(lorenz_df$cum_employees) * 
+                    (lorenz_df$cum_salaries[-1] + lorenz_df$cum_salaries[-length(lorenz_df$cum_salaries)])/2)
+
+# Plot Lorenz curve
+lorenz_plot <- ggplot(lorenz_df, aes(x = cum_employees, y = cum_salaries)) +
+  geom_line(size = 1, color = "steelblue") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "darkgrey") +
+  annotate("text", x = 0.75, y = 0.25, 
+           label = paste("Gini Coefficient =", round(gini, 3)), 
+           size = 5) +
+  labs(
+    title = "Lorenz Curve of Salary Distribution",
+    x = "Cumulative Proportion of Employees",
+    y = "Cumulative Proportion of Total Salary"
+  ) +
+  scale_x_continuous(labels = scales::percent_format()) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  coord_fixed() +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+print(lorenz_plot)
+```
+
+## Conclusion
+
+The log-normal distribution provides a realistic model for company salary structures:
+
+1. The majority of employees fall in the middle salary ranges
+2. A small number of highly-paid positions account for a disproportionate percentage of the total salary budget
+3. The Gini coefficient of `r round(gini, 3)` indicates a moderate level of inequality, typical for professional organisations
+
+This analysis can help with:
+- Budgeting and financial planning
+- Comparing compensation structures to industry benchmarks
+- Identifying potential compression issues in salary bands
+- Developing promotion and compensation strategies
+
+```{r key_metrics_summary}
+# Create summary table of key metrics
+summary_stats <- data.frame(
+  Metric = c(
+    "Mean Monthly Salary",
+    "Median Monthly Salary",
+    "Standard Deviation",
+    "Coefficient of Variation",
+    "Minimum (10th Percentile)",
+    "Maximum (99th Percentile)",
+    "Gini Coefficient",
+    "Total Monthly Expenditure",
+    "Total Annual Expenditure"
+  ),
+  Value = c(
+    paste0("£", format(round(mean_salary), big.mark=",")),
+    paste0("£", format(round(exp(mu)), big.mark=",")),
+    paste0("£", format(round(mean_salary * cv), big.mark=",")),
+    round(cv, 2),
+    paste0("£", format(round(qlnorm(0.1, meanlog = mu, sdlog = sigma)), big.mark=",")),
+    paste0("£", format(round(qlnorm(0.99, meanlog = mu, sdlog = sigma)), big.mark=",")),
+    round(gini, 3),
+    paste0("£", format(round(total_monthly_salary), big.mark=",")),
+    paste0("£", format(round(total_monthly_salary * 12), big.mark=","))
+  )
+)
+
+kable(summary_stats, align = "lr", caption = "Summary of Key Salary Distribution Metrics")
+```
