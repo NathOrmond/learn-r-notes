@@ -1,0 +1,115 @@
+---
+title: "Random Number Generation and Reproducibility"
+output: html_notebook
+---
+
+## Random Number Generation and Reproducibility in R
+
+Reproducibility is a cornerstone of scientific computing. When your analysis includes any random elements, understanding how R's random number generation works is essential.
+
+### How Random Number Generation Works in R
+
+R uses what's called a "pseudo-random number generator" (PRNG). This algorithm produces a sequence of numbers that appear random but are actually deterministic when you know the starting point, called a "seed".
+
+```{r}
+# Without setting a seed, results will be different each time you run this code
+sample(1:10, 5)
+```
+
+### Understanding set.seed()
+
+The `set.seed()` function initializes R's random number generator to a specific starting point:
+
+```{r}
+# Set the random seed
+set.seed(123)
+# Generate random sample
+sample(1:10, 5)
+```
+
+**Important**: Each random function call advances the random number generator to its next state. Running the same function again produces different results:
+
+```{r}
+# Set the seed once
+set.seed(123)
+
+# First call to sample() after setting seed
+result1 <- sample(1:10, 5)
+print(result1)
+
+# Second call - different result!
+result2 <- sample(1:10, 5)
+print(result2)
+
+# Third call - yet another different result
+result3 <- sample(1:10, 5)
+print(result3)
+```
+
+### For True Reproducibility
+
+If you need the exact same random numbers repeatedly, you have two options:
+
+#### Option 1: Reset the seed before each random operation
+
+```{r}
+# Reset seed before each call
+set.seed(123)
+result1 <- sample(1:10, 5)
+
+set.seed(123)
+result2 <- sample(1:10, 5)
+
+# These will be identical
+identical(result1, result2)
+```
+
+#### Option 2: Store the results for reuse
+
+```{r}
+# Set seed once at the beginning of your analysis
+set.seed(42)
+
+# Generate and store the random values you need
+random_sample <- sample(1:100, 10)
+training_indices <- sample(1:nrow(mtcars), 20)
+
+# Now use these stored values throughout your analysis
+head(random_sample)
+head(mtcars[training_indices, ])
+```
+
+### When to Use set.seed()
+
+1. **Data splitting**: When creating training/testing splits for models
+   
+```{r}
+   set.seed(123)
+   train_indices <- sample(1:150, 100)
+   iris_train <- iris[train_indices, ]
+   iris_test <- iris[-train_indices, ]
+```
+
+2. **Simulations and bootstrap**: For consistent results
+```{r}
+   set.seed(123)
+   bootstrap_means <- replicate(100, mean(sample(1:100, 30, replace = TRUE)))
+   hist(bootstrap_means)
+```
+
+3. **Model fitting** with random components
+```{r, eval=FALSE}
+# Models like random forests have randomness in their algorithm
+library(randomForest)  # Need to load the package first
+set.seed(123)
+model <- randomForest(Species ~ ., data = iris)
+```
+
+### Best Practices
+
+1. **Document your seed**: Always note which seed you used in your documentation
+2. **Set seed at analysis start**: For overall reproducibility of an entire notebook
+3. **Reset seed at critical points**: When specific results must be identical
+4. **Use different seeds**: For sensitivity analysis to ensure results aren't seed-dependent
+
+Remember: The specific seed value (like 123 or 42) doesn't matter - what matters is using the same value when you want to reproduce results.

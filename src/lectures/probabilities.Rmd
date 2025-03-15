@@ -1,0 +1,367 @@
+---
+title: "Probability Distributions in R"
+author: "Nathan Ormond"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+# Set seed for reproducibility across the entire document
+set.seed(123)
+```
+
+# Probability Distributions in R
+
+R provides powerful built-in functions for working with probability distributions. This document explores how to use these functions for various statistical tasks.
+
+## Basic Structure and Naming Convention
+
+For any probability distribution with base name `xxx`, R provides four functions:
+
+| Prefix | Function | Example | Purpose |
+|--------|----------|---------|---------|
+| `d` | Density | `dnorm()` | Probability density function (PDF) or probability mass function (PMF) |
+| `p` | Probability | `pnorm()` | Cumulative distribution function (CDF) |
+| `q` | Quantile | `qnorm()` | Quantile function (inverse CDF) |
+| `r` | Random | `rnorm()` | Generate random samples from the distribution |
+
+> **Note**: This consistent naming pattern applies to all probability distributions in R, making it straightforward to work with any distribution once you understand the pattern.
+
+## Common Distributions
+
+Below is a table of some common distributions available in R:
+
+| Distribution | R Base Name | Required Parameters |
+|--------------|------------|---------------------|
+| Normal | `norm` | `mean`, `sd` |
+| Binomial | `binom` | `size` (n), `prob` (p) |
+| Poisson | `pois` | `lambda` (λ) |
+| Exponential | `exp` | `rate` (λ) |
+| Uniform | `unif` | `min` (α), `max` (β) |
+| Student's t | `t` | `df` (degrees of freedom) |
+| Chi-squared | `chisq` | `df` (degrees of freedom) |
+| F | `f` | `df1`, `df2` (degrees of freedom) |
+| Gamma | `gamma` | `shape`, `rate` or `scale` |
+| Beta | `beta` | `shape1` (α), `shape2` (β) |
+
+## Working with the Binomial Distribution
+
+Let's explore the binomial distribution with n = 20 and p = 0.2.
+
+### Probability Mass Function (PMF)
+
+Calculate the probability of getting exactly 5 successes:
+
+```{r binomial_pmf}
+# P(X = 5)
+dbinom(5, size = 20, prob = 0.2)
+```
+
+We can visualise the entire PMF:
+
+```{r binomial_pmf_plot, fig.height=5, fig.width=8}
+x <- 0:20
+pmf <- dbinom(x, size = 20, prob = 0.2)
+barplot(pmf, names.arg = x, xlab = "Number of successes", 
+        ylab = "Probability", 
+        main = "Binomial PMF (n = 20, p = 0.2)")
+```
+
+> **Observation**: The distribution is slightly right-skewed with mode at x = 4.
+
+### Cumulative Distribution Function (CDF)
+
+Calculate the probability of getting at most 5 successes:
+
+```{r binomial_cdf}
+# P(X ≤ 5)
+pbinom(5, size = 20, prob = 0.2)
+```
+
+Calculate the probability of getting more than 5 successes:
+
+```{r binomial_upper_tail}
+# P(X > 5) = 1 - P(X ≤ 5)
+1 - pbinom(5, size = 20, prob = 0.2)
+
+# Alternative using lower.tail parameter
+pbinom(5, size = 20, prob = 0.2, lower.tail = FALSE)
+```
+
+Let's visualise the CDF:
+
+```{r binomial_cdf_plot, fig.height=5, fig.width=8}
+cdf <- pbinom(x, size = 20, prob = 0.2)
+plot(x, cdf, type = "s", xlab = "Number of successes", 
+     ylab = "Cumulative Probability", 
+     main = "Binomial CDF (n = 20, p = 0.2)")
+grid()
+```
+
+### Quantile Function
+
+Find the value such that the probability of getting at most that many successes is 0.5:
+
+```{r binomial_quantile}
+# Find x where P(X ≤ x) = 0.5
+qbinom(0.5, size = 20, prob = 0.2)
+```
+
+We can find multiple quantiles at once:
+
+```{r binomial_quantiles}
+# Find 10th, 25th, 50th, 75th, and 90th percentiles
+probs <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+qbinom(probs, size = 20, prob = 0.2)
+```
+
+### Random Number Generation
+
+Generate 10 random values from this binomial distribution:
+
+```{r binomial_random}
+rbinom(10, size = 20, prob = 0.2)
+```
+
+Let's visualise the distribution of a larger sample:
+
+```{r binomial_random_hist, fig.height=5, fig.width=8}
+random_sample <- rbinom(1000, size = 20, prob = 0.2)
+hist(random_sample, breaks = seq(-0.5, 20.5, by = 1), 
+     xlab = "Number of successes", 
+     main = "1000 Random Draws from Binomial(20, 0.2)")
+```
+
+> **Note**: With a large enough sample, the histogram approximates the theoretical PMF.
+
+## Working with the Normal Distribution
+
+Let's explore the normal distribution with mean = 70 and standard deviation = 5.
+
+### Probability Density Function (PDF)
+
+Calculate the height of the PDF at x = 70:
+
+```{r normal_pdf}
+dnorm(70, mean = 70, sd = 5)
+```
+
+Visualise the PDF:
+
+```{r normal_pdf_plot, fig.height=5, fig.width=8}
+x <- seq(55, 85, length.out = 100)
+pdf <- dnorm(x, mean = 70, sd = 5)
+plot(x, pdf, type = "l", xlab = "x", ylab = "Density", 
+     main = "Normal PDF (μ = 70, σ = 5)")
+abline(v = 70, lty = 2, col = "red")
+text(70, 0.02, "μ = 70", pos = 4, col = "red")
+```
+
+### Cumulative Distribution Function (CDF)
+
+Calculate the probability that X ≤ 75:
+
+```{r normal_cdf}
+pnorm(75, mean = 70, sd = 5)
+```
+
+Calculate the probability that X is between 65 and 75:
+
+```{r normal_interval}
+pnorm(75, mean = 70, sd = 5) - pnorm(65, mean = 70, sd = 5)
+```
+
+> **Insight**: This value is approximately 0.683, which corresponds to the probability within one standard deviation of the mean (the 68-95-99.7 rule).
+
+Visualise the CDF:
+
+```{r normal_cdf_plot, fig.height=5, fig.width=8}
+cdf <- pnorm(x, mean = 70, sd = 5)
+plot(x, cdf, type = "l", xlab = "x", ylab = "P(X ≤ x)", 
+     main = "Normal CDF (μ = 70, σ = 5)")
+abline(h = 0.5, lty = 2, col = "blue")
+abline(v = 70, lty = 2, col = "red")
+```
+
+### Quantile Function
+
+Find the 25th, 50th, and 75th percentiles:
+
+```{r normal_quantiles}
+qnorm(c(0.25, 0.5, 0.75), mean = 70, sd = 5)
+```
+
+### Random Number Generation
+
+Generate 10 random values from this normal distribution:
+
+```{r normal_random}
+rnorm(10, mean = 70, sd = 5)
+```
+
+Visualise the distribution of a large sample:
+
+```{r normal_random_hist, fig.height=5, fig.width=8}
+random_sample <- rnorm(1000, mean = 70, sd = 5)
+hist(random_sample, breaks = 20, probability = TRUE, 
+     xlab = "x", main = "1000 Random Draws from Normal(70, 5)")
+lines(x, dnorm(x, mean = 70, sd = 5), col = "red", lwd = 2)
+```
+
+## Comparing Multiple Distributions
+
+### Different Parameters of the Same Distribution
+
+Let's compare normal distributions with different parameters:
+
+```{r compare_normal, fig.height=5, fig.width=10}
+x <- seq(-10, 10, length.out = 200)
+plot(x, dnorm(x, mean = 0, sd = 1), type = "l", 
+     xlab = "x", ylab = "Density", 
+     main = "Comparing Normal Distributions",
+     ylim = c(0, 0.4))
+lines(x, dnorm(x, mean = 0, sd = 2), col = "red", lty = 2)
+lines(x, dnorm(x, mean = -3, sd = 1), col = "blue", lty = 3)
+lines(x, dnorm(x, mean = 3, sd = 1.5), col = "green", lty = 4)
+legend("topright", 
+       legend = c("N(0, 1)", "N(0, 2)", "N(-3, 1)", "N(3, 1.5)"),
+       col = c("black", "red", "blue", "green"),
+       lty = c(1, 2, 3, 4))
+```
+
+### Different Types of Distributions
+
+Let's compare several different types of distributions:
+
+```{r compare_distributions, fig.height=5, fig.width=10}
+x <- seq(0, 10, length.out = 200)
+plot(x, dexp(x, rate = 1), type = "l", 
+     xlab = "x", ylab = "Density", 
+     main = "Comparing Different Distributions",
+     ylim = c(0, 1))
+lines(x, dgamma(x, shape = 2, rate = 1), col = "red", lty = 2)
+lines(x, dchisq(x, df = 4)/2, col = "blue", lty = 3)
+legend("topright", 
+       legend = c("Exponential(1)", "Gamma(2, 1)", "Chi-squared(4)/2"),
+       col = c("black", "red", "blue"),
+       lty = c(1, 2, 3))
+```
+
+## Practical Application: Calculating Probabilities and Critical Values
+
+### Finding Critical Values for Hypothesis Testing
+
+For a two-tailed test with significance level α = 0.05:
+
+```{r critical_values}
+# Critical values for standard normal distribution
+alpha <- 0.05
+qnorm(alpha/2, lower.tail = FALSE)  # upper critical value
+qnorm(alpha/2)  # lower critical value
+
+# Critical value for t-distribution with 10 degrees of freedom
+qt(alpha/2, df = 10, lower.tail = FALSE)
+```
+
+### Calculating p-values
+
+If we observed a t-statistic of 2.5 with 10 degrees of freedom:
+
+```{r pvalues}
+# Two-tailed p-value
+2 * pt(2.5, df = 10, lower.tail = FALSE)
+```
+
+### Confidence Intervals
+
+95% confidence interval for a normal distribution with known standard deviation:
+
+```{r confidence_interval}
+mean_value <- 100
+std_error <- 15
+n <- 30
+standard_error <- std_error / sqrt(n)
+
+# 95% confidence interval
+lower_bound <- mean_value + qnorm(0.025) * standard_error
+upper_bound <- mean_value + qnorm(0.975) * standard_error
+c(lower_bound, upper_bound)
+```
+
+## Combining with Data Analysis
+
+Let's generate some data and check if it follows a normal distribution:
+
+```{r normality_test}
+# Generate slightly non-normal data
+data <- rnorm(100, mean = 50, sd = 10)^2/50
+
+# Q-Q plot
+qqnorm(data)
+qqline(data)
+
+# Shapiro-Wilk normality test
+shapiro.test(data)
+```
+
+## Advanced: Fitting Distributions to Data
+
+Let's generate data from a gamma distribution and then estimate its parameters:
+
+```{r fit_distribution, fig.height=5, fig.width=8}
+# Generate data from Gamma(shape=2, rate=0.5)
+true_shape <- 2
+true_rate <- 0.5
+data <- rgamma(1000, shape = true_shape, rate = true_rate)
+
+# Calculate method of moments estimators
+sample_mean <- mean(data)
+sample_var <- var(data)
+  
+shape_estimate <- sample_mean^2 / sample_var
+rate_estimate <- sample_mean / sample_var
+
+cat("True parameters: shape =", true_shape, ", rate =", true_rate, "\n")
+cat("Estimated parameters: shape =", shape_estimate, ", rate =", rate_estimate, "\n")
+
+# Plot the data with the fitted distribution
+hist(data, breaks = 30, probability = TRUE,
+     main = "Fitting a Gamma Distribution",
+     xlab = "x")
+
+x <- seq(0, max(data) + 5, length.out = 200)
+lines(x, dgamma(x, shape = shape_estimate, rate = rate_estimate), 
+      col = "red", lwd = 2)
+lines(x, dgamma(x, shape = true_shape, rate = true_rate), 
+      col = "blue", lwd = 2, lty = 2)
+legend("topright", 
+       legend = c("Fitted Gamma", "True Gamma"),
+       col = c("red", "blue"),
+       lty = c(1, 2),
+       lwd = c(2, 2))
+```
+
+## Conclusion
+
+R's built-in distribution functions provide powerful tools for probability calculations, statistical inference, and data analysis. The consistent naming convention (`d`, `p`, `q`, `r` prefixes) makes it easy to work with any probability distribution once you understand the pattern.
+
+Some key points to remember:
+
+1. For discrete distributions, the `d` functions give probabilities, while for continuous distributions, they give densities (not probabilities).
+
+2. All distribution functions are vectorized, which enables efficient computation.
+
+3. Always set a seed for reproducibility when generating random numbers.
+
+4. Pay careful attention to the specific parameters required by each distribution.
+
+5. Visualising distributions helps build intuition about their properties.
+
+> **Final note**: Understanding these distribution functions is fundamental to performing statistical analysis in R. They form the foundation for hypothesis testing, confidence intervals, simulation studies, and many other statistical techniques.

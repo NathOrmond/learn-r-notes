@@ -1,0 +1,469 @@
+---
+title: "Frequentist Statistical Test Selection"
+author: "Nathan Ormond"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+# Load necessary packages
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+```
+
+## Introduction
+
+This document demonstrates how to select appropriate frequentist statistical tests based on your data characteristics and research questions. We'll use standard R packages instead of specialized flowchart packages.
+
+## Basic Statistical Test Selection Framework
+
+The selection of an appropriate statistical test follows a logical decision tree based on three fundamental considerations:
+
+1. **Data characteristics** (categorical vs continuous)
+2. **Research question structure** (comparison vs relationship)
+3. **Assumption verification** (normality, equal variances, etc.)
+
+Let's visualize these decision points:
+
+```{r visualization, fig.width=10, fig.height=8}
+# Create data for a basic decision tree visualization
+nodes <- data.frame(
+  id = 1:10,
+  label = c("Data Type?", "Categorical", "Continuous", "How many groups?", 
+            "Two groups", "More than two", "Independent or related?", 
+            "Normality?", "Equal variances?", "Final test"),
+  x = c(5, 2, 8, 2, 1, 3, 8, 8, 8, 8),
+  y = c(10, 8, 8, 6, 4, 4, 6, 4, 2, 1)
+)
+
+# Create edges connecting the nodes
+edges <- data.frame(
+  from = c(1, 1, 2, 4, 4, 3, 7, 7, 8, 8, 9, 9),
+  to = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10),
+  label = c("Categorical", "Continuous", "", "Two", "Three+", "", 
+            "Yes", "No", "Normal", "Non-normal", "Equal", "Unequal")
+)
+
+# Create a visual representation of the decision tree
+ggplot() +
+  # Draw edges as arrows
+  geom_segment(data = edges, aes(x = nodes$x[from], y = nodes$y[from], 
+                                  xend = nodes$x[to], yend = nodes$y[to]),
+               arrow = arrow(length = unit(0.3, "cm")), 
+               color = "darkblue", size = 0.7) +
+  # Add edge labels
+  geom_text(data = edges, aes(x = (nodes$x[from] + nodes$x[to])/2,
+                              y = (nodes$y[from] + nodes$y[to])/2,
+                              label = label),
+            size = 3, nudge_x = 0.4, check_overlap = TRUE) +
+  # Draw nodes as circles with labels
+  geom_point(data = nodes, aes(x = x, y = y), 
+             size = ifelse(nodes$id == 1, 15, 12),
+             color = ifelse(nodes$id == 1, "skyblue", "lightblue"),
+             alpha = 0.7) +
+  geom_text(data = nodes, aes(x = x, y = y, label = label), 
+            size = 3.5) +
+  # Set plot aesthetics
+  labs(title = "Statistical Test Selection Decision Framework",
+       subtitle = "A simplified visualization of the decision process") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12))
+```
+
+## Parametric vs. Non-parametric Tests
+
+The most fundamental trade-off is between parametric and non-parametric approaches:
+
+```{r parametric-vs-nonparametric, fig.width=10, fig.height=6}
+# Create simulated data for demonstration
+set.seed(123)
+n <- 1000
+x_norm <- rnorm(n, mean = 5, sd = 1)
+x_skew <- 5 + rexp(n, rate = 1)
+
+# Create a data frame for plotting
+df <- data.frame(
+  value = c(x_norm, x_skew),
+  distribution = rep(c("Normal", "Skewed"), each = n)
+)
+
+# Plot distributions
+p1 <- ggplot(df, aes(x = value, fill = distribution)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = c("Normal" = "#3366CC", "Skewed" = "#CC6633")) +
+  labs(title = "Sample Distributions",
+       subtitle = "Parametric tests assume normality") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Create a data frame for power comparison
+power_df <- data.frame(
+  effect_size = seq(0.1, 1.0, by = 0.1),
+  parametric = 0.4 + 0.5 * seq(0.1, 1.0, by = 0.1),
+  nonparametric = 0.35 + 0.5 * seq(0.1, 1.0, by = 0.1)
+)
+
+power_long <- power_df %>%
+  pivot_longer(cols = c(parametric, nonparametric),
+               names_to = "test_type",
+               values_to = "power")
+
+# Plot power comparison
+p2 <- ggplot(power_long, aes(x = effect_size, y = power, color = test_type)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("parametric" = "#3366CC", "nonparametric" = "#CC6633"),
+                     labels = c("Non-parametric", "Parametric")) +
+  labs(title = "Statistical Power Comparison",
+       subtitle = "Parametric tests generally have higher power\nwhen assumptions are met",
+       x = "Effect Size",
+       y = "Statistical Power",
+       color = "Test Type") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Display plots side by side
+grid.arrange(p1, p2, ncol = 2)
+```
+
+## Examples of Test Selection
+
+### t-test vs. Mann-Whitney U Test
+
+Here we'll demonstrate how to check assumptions and choose between parametric and non-parametric tests:
+
+```{r t-test-example, fig.width=12, fig.height=6}
+# Generate sample data
+set.seed(456)
+group_a <- rnorm(30, mean = 10, sd = 2)
+group_b <- rnorm(30, mean = 11.5, sd = 2)
+
+# Create a data frame
+t_test_df <- data.frame(
+  value = c(group_a, group_b),
+  group = rep(c("A", "B"), each = 30)
+)
+
+# Visualize data with boxplots
+p3 <- ggplot(t_test_df, aes(x = group, y = value, fill = group)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_fill_manual(values = c("A" = "#3366CC", "B" = "#CC6633")) +
+  labs(title = "Group Comparison",
+       y = "Values") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# QQ plot for Group A
+p4 <- ggplot(t_test_df[t_test_df$group == "A",], aes(sample = value)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "QQ Plot: Group A") +
+  theme_minimal()
+
+# QQ plot for Group B
+p5 <- ggplot(t_test_df[t_test_df$group == "B",], aes(sample = value)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "QQ Plot: Group B") +
+  theme_minimal()
+
+# Create an explanation text plot without using geom_textbox
+p6 <- ggplot() + 
+  annotate("rect", xmin = -1, xmax = 1, ymin = -1, ymax = 1, 
+           fill = "lightblue", alpha = 0.3) +
+  annotate("text", x = 0, y = 0, 
+           label = "QQ (Quantile-Quantile) plots compare the distribution of your data with a theoretical normal distribution.\n\nIf points follow the diagonal line, the data is approximately normally distributed.\n\nDeviations from the line, especially at the ends, indicate departures from normality.\n\nQQ plots help determine whether parametric tests (which assume normality) are appropriate for your data.",
+           size = 3.5, hjust = 0.5, vjust = 0.5) +
+  theme_void() +
+  labs(title = "Understanding QQ Plots")
+
+# Combine plots
+grid.arrange(p3, p6, p4, p5, ncol = 2, widths = c(1, 1.5))
+
+# Perform tests
+t_test_result <- t.test(value ~ group, data = t_test_df)
+wilcox_result <- wilcox.test(value ~ group, data = t_test_df)
+
+cat("t-test result: p =", round(t_test_result$p.value, 4), "\n")
+cat("Mann-Whitney U test result: p =", round(wilcox_result$p.value, 4), "\n")
+```
+
+### ANOVA vs. Kruskal-Wallis
+
+For comparisons involving more than two groups:
+
+```{r anova-example, fig.width=9, fig.height=7}
+# Generate sample data
+set.seed(789)
+group_c <- rnorm(25, mean = 10, sd = 2)
+group_d <- rnorm(25, mean = 12, sd = 2)
+group_e <- rnorm(25, mean = 11, sd = 2)
+
+# Create a data frame
+anova_df <- data.frame(
+  value = c(group_c, group_d, group_e),
+  group = rep(c("C", "D", "E"), each = 25)
+)
+
+# Visualize data
+p7 <- ggplot(anova_df, aes(x = group, y = value, fill = group)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_fill_manual(values = c("C" = "#3366CC", "D" = "#CC6633", "E" = "#66CC33")) +
+  labs(title = "Multiple Group Comparison",
+       y = "Values") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Density plots for each group
+p8 <- ggplot(anova_df, aes(x = value, fill = group)) +
+  geom_density(alpha = 0.4) +
+  scale_fill_manual(values = c("C" = "#3366CC", "D" = "#CC6633", "E" = "#66CC33")) +
+  labs(title = "Density Plots by Group") +
+  theme_minimal()
+
+# Perform tests
+anova_result <- aov(value ~ group, data = anova_df)
+kruskal_result <- kruskal.test(value ~ group, data = anova_df)
+
+# Create residual plot for checking homogeneity of variance
+anova_df$residuals <- residuals(anova_result)
+anova_df$fitted <- fitted(anova_result)
+
+p9 <- ggplot(anova_df, aes(x = fitted, y = residuals)) +
+  geom_point(aes(color = group), alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_color_manual(values = c("C" = "#3366CC", "D" = "#CC6633", "E" = "#66CC33")) +
+  labs(title = "Residuals vs Fitted Values",
+       subtitle = "For checking homogeneity of variance") +
+  theme_minimal()
+
+# Combine plots
+grid.arrange(p7, p8, p9, ncol = 2, nrow = 2)
+
+# Display results
+cat("ANOVA result: p =", round(summary(anova_result)[[1]]$"Pr(>F)"[1], 4), "\n")
+cat("Kruskal-Wallis result: p =", round(kruskal_result$p.value, 4), "\n")
+
+# Tukey's HSD for post-hoc analysis
+if(summary(anova_result)[[1]]$"Pr(>F)"[1] < 0.05) {
+  cat("\nPost-hoc analysis (Tukey's HSD):\n")
+  print(TukeyHSD(anova_result))
+}
+```
+
+## Structured Decision Process for Test Selection
+
+Here's a step-by-step guide for selecting an appropriate test:
+
+```{r decision-tree, fig.width=12, fig.height=9}
+# Create data for a more detailed decision tree
+decisions <- data.frame(
+  x = c(1:20, 1:20, 1:20),
+  y = rep(c(1, 2, 3), each = 20),
+  label = c(
+    # Level 1 - Data type
+    "Is your data categorical or continuous?", rep(NA, 19),
+    # Level 2 - Branches by data type
+    "Categorical", "Continuous", rep(NA, 18),
+    # Level 3 - More specific questions
+    "How many variables?", "Normality check?", "How many groups?", 
+    "What's your question?", rep(NA, 16)
+  )
+)
+
+# Remove NA labels
+decisions <- decisions[!is.na(decisions$label), ]
+
+# Create visual
+ggplot(decisions, aes(x = x, y = y)) +
+  # Add the decision points as text
+  geom_text(aes(label = label), size = 4) +
+  # Add arrows connecting decision points
+  geom_segment(aes(x = 1, y = 3, xend = 1, yend = 2), 
+               arrow = arrow(length = unit(0.2, "cm")), size = 0.8) +
+  geom_segment(aes(x = 1, y = 2, xend = 1, yend = 1), 
+               arrow = arrow(length = unit(0.2, "cm")), size = 0.8) +
+  geom_segment(aes(x = 1, y = 2, xend = 2, yend = 1), 
+               arrow = arrow(length = unit(0.2, "cm")), size = 0.8) +
+  # Customize appearance
+  xlim(0, 10) +
+  ylim(0, 4) +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16)) +
+  labs(title = "First Steps in Statistical Test Selection")
+```
+
+## Statistical Test Selection Guide
+
+This comprehensive decision matrix helps you select the appropriate statistical test based on your data characteristics and research question:
+
+```{r test-selection-matrix, fig.width=12, fig.height=8}
+# Create a visual guide for test selection
+test_matrix <- data.frame(
+  x = rep(1:5, each = 4),
+  y = rep(4:1, times = 5),
+  test = c(
+    # Column 1 - Categorical
+    "Chi-square\nGoodness-of-fit",
+    "Chi-square\nIndependence",
+    "Fisher's exact\ntest",
+    "McNemar's test",
+    
+    # Column 2 - One sample continuous
+    "One-sample\nt-test",
+    "Wilcoxon\nsigned-rank",
+    "Binomial test",
+    "Sign test",
+    
+    # Column 3 - Two samples continuous
+    "Independent\nt-test",
+    "Paired\nt-test",
+    "Mann-Whitney\nU test",
+    "Wilcoxon\nsigned-rank",
+    
+    # Column 4 - Multi-sample continuous
+    "One-way\nANOVA",
+    "Repeated measures\nANOVA",
+    "Kruskal-Wallis\ntest",
+    "Friedman\ntest",
+    
+    # Column 5 - Relationships
+    "Pearson's\ncorrelation",
+    "Linear\nregression",
+    "Spearman's\ncorrelation",
+    "Logistic\nregression"
+  ),
+  type = c(
+    rep("Categorical", 4),
+    rep("Continuous\n(one sample)", 4),
+    rep("Continuous\n(two samples)", 4),
+    rep("Continuous\n(3+ samples)", 4),
+    rep("Relationship", 4)
+  ),
+  parametric = c(
+    rep(c("Parametric", "Non-parametric"), times = 10)
+  )
+)
+
+# Plot the matrix
+ggplot(test_matrix, aes(x = x, y = y)) +
+  # Add background tiles
+  geom_tile(aes(fill = type), alpha = 0.3, color = "gray") +
+  # Add test names
+  geom_text(aes(label = test, color = parametric), 
+            size = 3.5, fontface = "bold") +
+  # Set colors and labels
+  scale_fill_manual(values = c("lightblue", "lightgreen", "lightyellow", 
+                              "lightpink", "lightsalmon")) +
+  scale_color_manual(values = c("blue4", "darkred")) +
+  scale_x_continuous(breaks = 1:5, 
+                    labels = c("Categorical", "One sample\ncontinuous", 
+                              "Two samples\ncontinuous", "Multi-sample\ncontinuous", 
+                              "Relationships")) +
+  scale_y_continuous(breaks = 1:4, 
+                    labels = c("Related\nsamples", "Independent\nsamples", 
+                              "Normal data", "Non-normal\ndata")) +
+  # Set theme and labels
+  theme_minimal() +
+  theme(axis.text = element_text(face = "bold"),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 16)) +
+  labs(title = "Statistical Test Selection Matrix",
+       x = "Data Type and Research Question",
+       y = "Assumptions and Sample Type",
+       fill = "Category",
+       color = "Test Type")
+```
+
+## Comprehensive Test Selection Table
+
+```{r test-table, echo=FALSE}
+# Create a comprehensive table of tests
+tests_df <- data.frame(
+  Test = c(
+    "Chi-square test", 
+    "Fisher's exact test", 
+    "Independent t-test", 
+    "Welch's t-test", 
+    "Paired t-test", 
+    "One-sample t-test", 
+    "Mann-Whitney U", 
+    "Wilcoxon signed-rank", 
+    "One-way ANOVA", 
+    "Kruskal-Wallis", 
+    "Repeated measures ANOVA", 
+    "Friedman test",
+    "Pearson correlation",
+    "Spearman correlation"
+  ),
+  DataType = c(
+    "Categorical", "Categorical", 
+    "Continuous", "Continuous", "Continuous", "Continuous",
+    "Continuous", "Continuous", "Continuous", "Continuous",
+    "Continuous", "Continuous", "Continuous", "Continuous"
+  ),
+  Groups = c(
+    "Two+", "Two", 
+    "Two", "Two", "Two (paired)", "One",
+    "Two", "Two (paired)", "Three+", "Three+",
+    "Three+ (repeated)", "Three+ (repeated)", "N/A", "N/A"
+  ),
+  Parametric = c(
+    "No", "No", 
+    "Yes", "Yes", "Yes", "Yes",
+    "No", "No", "Yes", "No",
+    "Yes", "No", "Yes", "No"
+  ),
+  KeyAssumptions = c(
+    "Expected counts ≥5", "Small sample size", 
+    "Normality, Equal variances", "Normality, Unequal variances", 
+    "Normally distributed differences", "Normality",
+    "Continuous distribution", "Continuous distribution", 
+    "Normality, Equal variances", "Continuous distribution",
+    "Sphericity", "Ordered data", 
+    "Bivariate normality, Linear relationship", "Monotonic relationship"
+  ),
+  UseWhen = c(
+    "Comparing proportions with adequate sample", "Small sample or sparse data", 
+    "Comparing means of independent samples with equal variance", 
+    "Comparing means with unequal variances",
+    "Comparing means of paired samples", "Comparing mean to known value",
+    "Comparing independent samples, non-normal data", 
+    "Comparing paired samples, non-normal data",
+    "Comparing three+ groups with equal variance", 
+    "Comparing three+ groups, non-normal data",
+    "Comparing repeated measures across three+ conditions",
+    "Comparing repeated measures, non-normal or ordinal data",
+    "Assessing linear relationship between variables",
+    "Assessing monotonic relationship, non-normal or ordinal data"
+  )
+)
+
+# Display the table
+knitr::kable(tests_df)
+```
+
+## Conclusion
+
+When selecting a statistical test, remember these key principles:
+
+1. **Identify your variables' types** (categorical or continuous)
+2. **Clarify your research question** (comparison or relationship)
+3. **Check assumptions carefully**
+   - For continuous data: normality, homogeneity of variance
+   - For categorical data: expected cell counts
+4. **Consider sample size** - affects robustness and power
+5. **Choose between parametric and non-parametric approaches** based on assumptions
+6. **For significant results, conduct appropriate post-hoc tests**
+
+By following this structured approach, you can select the most appropriate statistical test for your specific research scenario.

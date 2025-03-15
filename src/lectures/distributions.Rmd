@@ -1,0 +1,211 @@
+---
+title: "Distributions in R"
+output: html_notebook
+---
+
+# Introduction to Probability Functions in R
+
+R provides a suite of functions for working with probability distributions. Each distribution has four variants, specified by a prefix letter:
+
+- `d`: Density/probability mass function (PDF/PMF)
+- `p`: Cumulative distribution function (CDF)
+- `q`: Quantile function (inverse CDF)
+- `r`: Random number generation
+
+For example, for the normal distribution:
+- `dnorm()`: PDF value at x
+- `pnorm()`: Probability of X ≤ x
+- `qnorm()`: Value of x at given probability
+- `rnorm()`: Generate random numbers
+
+Let's explore each major distribution:
+
+## 1. Normal Distribution
+
+The normal distribution is defined by its mean (μ) and standard deviation (σ).
+
+```{r}
+# Generate random normal numbers
+x <- rnorm(1000, mean = 0, sd = 1)
+hist(x, breaks = 30, prob = TRUE, main = "Standard Normal Distribution")
+curve(dnorm(x), add = TRUE, col = "red")
+
+# PDF at specific points
+dnorm(0)  # Density at mean
+#> [1] 0.3989423
+dnorm(1)  # Density at one SD
+#> [1] 0.2419707
+
+# CDF - probability of X ≤ 1.96 (95% confidence interval)
+pnorm(1.96)
+#> [1] 0.9750021
+
+# Quantile - find value at 97.5th percentile
+qnorm(0.975)
+#> [1] 1.959964
+```
+
+
+## 2. Binomial Distribution
+
+The binomial distribution models the number of successes in n independent trials with probability p.
+
+```{r}
+# Probability of exactly 3 successes in 5 trials with p=0.5
+dbinom(3, size = 5, prob = 0.5)
+#> [1] 0.3125
+
+# Probability of 3 or fewer successes
+pbinom(3, size = 5, prob = 0.5)
+#> [1] 0.8125
+
+# Generate 10 random binomial numbers
+rbinom(10, size = 5, prob = 0.5)
+
+# Plot probability mass function
+x <- 0:10
+plot(x, dbinom(x, size = 10, prob = 0.5), type = "h", 
+     main = "Binomial Distribution (n=10, p=0.5)")
+```
+
+## 3. Poisson Distribution
+
+The Poisson distribution models rare events, with parameter λ representing the average rate.
+
+```{r}
+# Probability of exactly 2 events when mean is 1
+dpois(2, lambda = 1)
+#> [1] 0.1839397
+
+# Probability of 2 or fewer events
+ppois(2, lambda = 1)
+#> [1] 0.9196986
+
+# Generate random Poisson numbers
+rpois(1000, lambda = 2) |> 
+  hist(main = "Poisson Distribution (λ=2)")
+```
+
+## 4. Uniform Distribution
+
+The uniform distribution models equal probability across an interval.
+
+```{r}
+# Generate uniform random numbers
+x <- runif(1000, min = 0, max = 1)
+hist(x, breaks = 30, prob = TRUE, main = "Uniform Distribution")
+curve(dunif(x, 0, 1), add = TRUE, col = "red")
+
+# PDF is constant between min and max
+dunif(0.5, min = 0, max = 1)
+#> [1] 1
+
+# CDF increases linearly
+punif(0.5, min = 0, max = 1)
+#> [1] 0.5
+```
+
+## 5. Chi-Square Distribution
+
+The chi-square distribution with k degrees of freedom is the sum of k squared standard normal variables.
+
+```{r}
+# Generate chi-square random numbers
+x <- rchisq(1000, df = 3)
+hist(x, breaks = 30, prob = TRUE, main = "Chi-Square Distribution (df=3)")
+curve(dchisq(x, df = 3), add = TRUE, col = "red")
+
+# Critical value for 95% confidence
+qchisq(0.95, df = 3)
+#> [1] 7.814728
+```
+
+## 6. Student's t Distribution
+
+The t-distribution is similar to normal but has heavier tails, useful for small samples.
+
+```{r}
+# Compare t vs normal densities
+curve(dt(x, df = 3), from = -4, to = 4, col = "red",
+      main = "t vs Normal Distribution")
+curve(dnorm(x), add = TRUE, col = "blue")
+legend("topright", c("t(df=3)", "normal"), col = c("red", "blue"), lty = 1)
+
+# Critical value for 95% confidence, df=10
+qt(0.975, df = 10)
+#> [1] 2.228139
+```
+
+## 7. F Distribution
+
+The F distribution is used in ANOVA and regression analysis.
+
+```{r}
+# Generate F-distributed random numbers
+x <- rf(1000, df1 = 3, df2 = 20)
+hist(x, breaks = 30, prob = TRUE, main = "F Distribution")
+curve(df(x, df1 = 3, df2 = 20), add = TRUE, col = "red")
+
+# Critical value for 95% confidence
+qf(0.95, df1 = 3, df2 = 20)
+#> [1] 3.098391
+```
+
+## Common Use Cases
+
+1. Normal Distribution:
+   - Confidence intervals
+   - Statistical inference
+   - Modeling natural phenomena
+
+2. Binomial Distribution:
+   - A/B testing
+   - Quality control
+   - Success/failure experiments
+
+3. Poisson Distribution:
+   - Modeling rare events
+   - Queue theory
+   - Count data
+
+4. Uniform Distribution:
+   - Random number generation
+   - Simulation studies
+   - Testing algorithms
+
+5. Chi-Square Distribution:
+   - Goodness of fit tests
+   - Tests of independence
+   - Variance analysis
+
+6. Student's t Distribution:
+   - Small sample inference
+   - Confidence intervals
+   - Hypothesis testing
+
+7. F Distribution:
+   - ANOVA
+   - Model comparison
+   - Variance ratio tests
+
+## Practical Tips
+
+1. Always check your parameters:
+```{r}
+# This will give a warning
+rnorm(10, sd = -1)
+```
+
+2. Use `set.seed()` for reproducible results:
+```{r}
+set.seed(123)
+rnorm(3)
+set.seed(123)
+rnorm(3)  # Same numbers
+```
+
+3. For probabilities, remember:
+   - `d` functions return height of PDF/PMF
+   - `p` functions return area (probability)
+   - `q` functions are inverse of `p`
+   - `r` functions generate random numbers

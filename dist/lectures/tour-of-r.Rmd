@@ -1,0 +1,346 @@
+---
+title: "Tour of R"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+# A simple example of R's plotting capabilities
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+# 1. Getting Started with R
+
+## 1.1 Required Packages
+Before we begin, let's install the necessary packages:
+
+```{r}
+# Uncomment and run these lines if you haven't installed these packages
+# install.packages(c("learnr", "tidyverse", "remotes"))
+# remotes::install_github("rstudio/gradethis")
+```
+
+## 1.2 Using RStudio
+Key shortcuts to remember:
+- `Cmd/Ctrl + Enter`: Run current line or selection
+- `Cmd/Ctrl + Shift + Enter`: Run current chunk
+- `Cmd/Ctrl + Option/Alt + I`: Insert new chunk
+
+## 1.3 Comments in R
+R supports both single-line and multi-line comments:
+
+```{r}
+# This is a single-line comment
+x <- 5 # Comments can also go after code
+
+'This is a multi-line comment
+It can span several lines
+But it is less commonly used than # comments'
+```
+
+# 2. Data Types and Variables
+
+## 2.1 Basic Data Types
+
+```{r}
+# Numeric Type
+a <- 1
+class(a)  # Shows the type
+
+# Integer Type
+b <- 1L  # The 'L' suffix creates an integer
+class(b)
+
+# Character/String Type
+fruit <- "Apple"  # Double quotes
+colour <- 'red'   # Single quotes work too
+print(fruit)
+print(colour)
+
+# Logical Type
+x <- TRUE
+y <- FALSE
+class(x)
+```
+
+## 2.2 Type Checking and Comparison
+
+```{r}
+# Comparison operators
+x == y  # Equal to
+x != y  # Not equal to
+
+b <- 3
+a > b   # Greater than
+a >= b  # Greater than or equal to
+a <= b  # Less than or equal to
+
+# String comparison
+"red" == "Red"  # Case-sensitive
+
+# Type checking functions
+is.logical(a)
+is.numeric(a)
+is.na(a)
+```
+
+## 2.3 Type Casting
+
+```{r}
+# Logical casting
+as.logical(0)     # FALSE
+as.logical(21)    # TRUE
+as.logical("text") # NA
+
+# Numeric casting
+as.numeric(TRUE)   # 1
+as.numeric(FALSE)  # 0
+as.numeric("4.5")  # 4.5
+as.integer("4.5")  # 4 (rounds down)
+
+# Character casting
+as.character(TRUE)  # "TRUE"
+as.character(10)    # "10"
+as.character(-2.263) # "-2.263"
+```
+
+# 3. Data Structures
+
+## 3.1 Vectors
+Vectors are one-dimensional arrays that can hold elements of the same type:
+
+```{r}
+# Creating vectors with c()
+fruits <- c("Apple", "Orange", "Pear", "Grapes")
+height <- c(1.68, 1.83, 1.57, 1.87, 1.7, 1.57, 1.73, 1.85, 1.6, 1.58)
+smokes <- c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE)
+
+# Vector operations
+head(height)           # First 6 values
+head(height, n = 4)    # First 4 values
+tail(height, n = 4)    # Last 4 values
+
+# Filtering
+height[height > 1.7]   # Conditional filtering
+smokes[smokes]         # Logical filtering
+smokes[!smokes]        # Negation
+
+# Sequence creation
+1:10                  # Integer sequence
+seq(3.4, 12.5)       # Floating point sequence
+```
+
+## 3.2 Factors
+Factors are used to store categorical data:
+
+```{r}
+# Creating a factor
+sex <- factor(c("Male", "Male", "Female", "Male", "Female", "Female", 
+                "Female", "Male", "Female", "Female"))
+print(sex)
+
+# Converting factors
+as.character(sex)
+as.numeric(sex)  # Returns the internal integer codes
+```
+
+## 3.3 Matrices
+Matrices are 2-dimensional arrays with elements of the same type:
+
+```{r}
+# Creating matrices
+X <- matrix(1:12, nrow = 3)
+print("Matrix X (3x4):")
+print(X)  # Shows a 3x4 matrix:
+#      [,1] [,2] [,3] [,4]
+# [1,]    1    4    7   10
+# [2,]    2    5    8   11
+# [3,]    3    6    9   12
+
+Y <- matrix(1:12, ncol = 4)  # Same as X
+Z <- matrix(1:12, ncol = 4, byrow = TRUE)
+print("Matrix Z (3x4):")
+print(Z)  # Shows:
+#      [,1] [,2] [,3] [,4]
+# [1,]    1    2    3    4
+# [2,]    5    6    7    8
+# [3,]    9   10   11   12
+
+# Matrix indexing
+# Extracts first column: numbers in first position of each row
+print(Z[, 1])  # Returns: [1] 1 5 9
+
+# Extracts second row: all numbers in row 2
+print(Z[2, ])  # Returns: [1] 5 6 7 8
+
+# Matrix operations
+# Element-wise addition of X + Y
+print(X + Y)   # Shows:
+#      [,1] [,2] [,3] [,4]
+# [1,]    2    8   14   20
+# [2,]    4   10   16   22
+# [3,]    6   12   18   24
+
+# Matrix multiplication X %*% Y will fail because:
+# X is 3x4 and Y is 3x4, but we need the number of columns in X
+# to match the number of rows in Y for matrix multiplication
+print("This will produce an error:")
+X %*% Y  # Error: non-conformable arguments
+
+# For a working example of matrix multiplication:
+Y2 <- matrix(1:12, nrow = 4)  # Create a 4x3 matrix instead
+print("Y2 (4x3 matrix):")
+print(Y2)
+print("X %*% Y2 (valid matrix multiplication):")
+print(X %*% Y2)  # This works because 3x4 times 4x3 gives 3x3
+```
+
+## 3.4 Data Frames
+Data frames are 2-dimensional structures that can hold different types of data:
+
+```{r}
+# Creating a data frame
+activity_levels <- data.frame(
+  Sex = sex,
+  Height = height,
+  Smokes = smokes
+)
+print(activity_levels)
+
+# Accessing data frame elements
+# activity_levels[row, column]
+```
+
+# 4. Data Import and Handling
+
+## 4.1 Reading Files
+
+```{r}
+# Reading CSV files
+# my_data <- read.csv("file.csv")
+# my_data <- read.csv("file.csv", header = TRUE, na.strings = "*")
+
+# Reading text files
+# my_data <- read.table("file.txt", header = TRUE, na.strings = "*")
+```
+
+## 4.2 Handling Missing Values
+
+```{r}
+# Working with NA values
+y <- c(1, 2, 3, 4, NA)
+is.na(y)
+
+# Calculating mean with NA removal
+mean(y, na.rm = TRUE)
+
+# Replacing values with NA
+# mydata$v1[mydata$v1 == 99] <- NA
+```
+
+# 5. Functions and Control Flow
+
+## 5.1 Built-in Functions
+
+```{r}
+# Mathematical functions
+sqrt(9)
+log(100)
+log(100, base = 10)
+
+# Statistical functions
+normal_sample <- rnorm(n = 100, sd = 2, mean = 5)
+mean(normal_sample)
+
+# Order of operations
+(3.6 * 10^-3 + 7.2 * 2)/(10 + 2)  # Using BIDMAS
+(3.6e-3 + 7.2 * 2)/(10 + 2)       # Using scientific notation
+```
+
+## 5.2 Custom Functions
+
+```{r}
+# Simple function
+myfunction <- function(arg1, arg2) {
+  product <- arg1 + arg2
+  return(product)
+}
+
+# Function returning multiple values
+prodSum <- function(x, y, z) {
+  product <- x * y * z
+  sum <- x + y + z
+  list(product = product, sum = sum)
+}
+```
+
+## 5.3 Control Structures
+
+### 5.3.1 Conditional Statements
+
+```{r}
+# If-else statement
+x <- 4
+if(x %% 2 == 0) {
+  print("even")
+} else {
+  print("odd")
+}
+```
+
+### 5.3.2 Loops
+
+```{r}
+# For loop
+for(i in 1:5) {
+  print(i)
+}
+
+# While loop
+x <- 0
+while(x < 5) {
+  x <- x + 1
+  print(x)
+}
+
+# Nested loops example (matrix multiplication)
+X <- matrix(c(1,2,3,3,4,5,4,5,6), byrow = TRUE, nrow = 3)
+y <- c(0,2,4)
+Xy <- numeric(3)
+
+for(i in 1:nrow(X)) {
+  for(j in 1:ncol(X)) {
+    Xy[i] <- Xy[i] + X[i,j] * y[j]
+  }
+}
+```
+
+# 6. Advanced Functions
+
+## 6.1 Apply Family of Functions
+
+```{r}
+# Create sample data
+random_data <- matrix(rnorm(20), nrow = 4)
+
+# Using apply()
+apply(random_data, 2, mean)  # Apply mean to each column
+apply(random_data, 1, mean)  # Apply mean to each row
+
+# Using lapply()
+lapply(random_data, mean)  # Returns a list
+```
+
+Note: For more information about any function, use the help() function or ? operator:
+```{r}
+# Uncomment to view documentation
+# ?mean
+# help(sqrt)
+```
